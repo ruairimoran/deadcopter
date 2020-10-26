@@ -1,2 +1,0 @@
-# deadcopter
-VTOL aircraft
