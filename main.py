@@ -1,9 +1,8 @@
 import dead
-import numpy as np
 
 
-copter = dead.copter.DeadCopter()
-#print(f"copter mass: {copter.gamma_u}")
+copter = dead.copter.DeadCopter(mass=2.34, arm_length=0.8)
+print(f"copter mass: {copter.mass}")
 
 # dynamics =
 # input: [q0, q1, q2, q3, wx, wy, wz, nx, ny, nz], [ux, uy, uz]
