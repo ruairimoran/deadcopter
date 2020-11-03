@@ -7,7 +7,7 @@ class DeadCopter:
 
     def __init__(self, **kwargs):
         # system state [q0, q1, q2, q3, wx, wy, wz, nx, ny, nz]
-        self.__state = [1] + [0] * 9
+        self.__state = np.array([1] + [0] * 9)
 
         # SYSTEM PARAMETERS
         # general
@@ -96,7 +96,7 @@ class DeadCopter:
         phi = np.arctan2(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]**2 + q[2]**2))
         theta = np.arcsin(2*(q[0]*q[2] - q[1]*q[3]))
         psi = np.arctan2(2*(q[0]*q[3] + q[2]*q[3]), 1 - 2*(q[2]**2 + q[3]**2))
-        return [phi, theta, psi]
+        return np.array([phi, theta, psi])
 
     def linearisation(self):
         pass
@@ -114,10 +114,10 @@ class DeadCopter:
             angular_freq_dot = list(np.diag(self.__gamma_n * rotor_freq + self.__gamma_u * u
                                             - np.diagflat(1 / np.diag(self.__moi)) * angular_freq_cross))
             rotor_freq_dot = list(self.__k2 * (self.__k1 * control_action - rotor_freq))
-            return list(attitude_quat_dot + angular_freq_dot + rotor_freq_dot)
+            return attitude_quat_dot + angular_freq_dot + rotor_freq_dot
 
         solution = solve_ivp(dynamics,
                              [0, dt],
                              self.__state)
 
-        self.__state = [solution.y[i][-1] for i in range(10)]
+        self.__state = solution.y[:, -1]
