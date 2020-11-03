@@ -4,11 +4,13 @@ import dead
 
 class CopterTestCase(unittest.TestCase):
 
-    def test_copter(self):
-        copter = dead.copter.DeadCopter()
-        self.assertTrue(copter.mass > 0)
-        self.fail("failed!")
+    def test_attribute(self):
+        copter = dead.copter.DeadCopter(mass=1.1)
+        self.assertAlmostEqual(copter.mass, 1.1, 12, "fail")
 
+    # test single axis rotations
+
+    # compare with linearised system state
 
 if __name__ == '__main__':
     unittest.main()
