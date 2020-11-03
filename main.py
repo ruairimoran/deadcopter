@@ -1,7 +1,8 @@
 import dead
+import numpy as np
 
 
-copter = dead.copter.DeadCopter(mass=2.34, arm_length=0.8)
+copter = dead.copter.DeadCopter(mass=1.2, arm_length=0.8)
 print(f"copter mass: {copter.mass}")
 
 # dynamics =

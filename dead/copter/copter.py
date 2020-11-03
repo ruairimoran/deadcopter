@@ -19,11 +19,11 @@ class DeadCopter:
         self.air_density = 1.225  # kg/m^3              # air density at sea level, 15 deg C
 
         # motors
-        self.K_v = 1000  # rpm/V                        # motor speed constant
-        self.motor_time_constant = 35  # ms             # motor time constant
-        self.rotor_mass = 10  # g                       # rotor mass
-        self.rotor_radius = 15  # mm                    # rotor radius
-        self.motor_mass = 50  # g                       # total mass of motor
+        self.K_v = 1000 / 60  # rps/V                   # motor speed constant
+        self.motor_time_constant = 35 / 1000  # s       # motor time constant
+        self.rotor_mass = 10 / 1000  # kg               # rotor mass
+        self.rotor_radius = 15 / 1000  # m              # rotor radius
+        self.motor_mass = 50 / 1000  # kg               # total mass of motor
         self.voltage_max = 14  # V                      # max voltage to motor
         self.voltage_min = 10  # V                      # min voltage to motor
         self.motor_moi = 1  # kg.m^2                    # motor moment of inertia
@@ -31,8 +31,8 @@ class DeadCopter:
         # props
         self.thrust_coeff = 0.1                         # thrust coefficient
         self.power_coeff = 0.04                         # power coefficient
-        self.prop_mass = 10  # g                        # prop mass
-        self.prop_diameter = 9  # in                    # prop diameter
+        self.prop_mass = 10 / 1000  # kg                # prop mass
+        self.prop_diameter = 9 * 0.0254  # m            # prop diameter
         self.prop_moi = 1  # kg.m^2                     # prop moment of inertia
 
         # parse `kwargs` and set as attribute, provided the keyword corresponds
@@ -64,20 +64,21 @@ class DeadCopter:
 
     def dynamics(self, state, u):
         # define
-        q = Quaternion(state[0:4])                              # q = quaternion / attitude
-        w = state[4:7]                                          # w = omega / angular frequencies
-        n = state[7:10]                                         # n = rotor frequencies
-        control_action = np.array(u)                            # c = control input
+        attitude_quat = Quaternion(state[0:4])                  # attitude as a quaternion
+        angular_freq = state[4:7]                               # angular frequencies
+        rotor_freq = state[7:10]                                # rotor frequencies
+        control_action = np.array(u)                            # control input
 
-        w_quat = Quaternion([0] + w)
-        q_dot = list(0.5 * q * w_quat)
+        angular_freq_quat = Quaternion([0] + angular_freq)
+        attitude_quat_dot = list(0.5 * attitude_quat * angular_freq_quat)
 
-        w1 = np.diag(self.moi * w)                                  # flatten 3x3 array to 1x3
-        w_cross = np.cross(w, w1)
-        w_dot = list(np.diag(self.__gamma_n * n + self.__gamma_u * u - np.linalg.inv(self.moi) * w_cross))
+        af1 = np.diag(self.moi * angular_freq)                  # af = angular_freq  # flatten 3x3 array to 1x3
+        angular_freq_cross = np.cross(angular_freq, af1)
+        angular_freq_dot = list(np.diag(self.__gamma_n * rotor_freq + self.__gamma_u * u
+                                        - np.diagflat(1/np.diag(self.moi)) * angular_freq_cross))
 
-        n_dot = list(self.__k2 * (self.__k1 * control_action - n))
+        rotor_freq_dot = list(self.__k2 * (self.__k1 * control_action - rotor_freq))
 
-        dynamics = list(q_dot + w_dot + n_dot)
+        dynamics = list(attitude_quat_dot + angular_freq_dot + rotor_freq_dot)
 
         return dynamics
