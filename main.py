@@ -1,20 +1,17 @@
 import dead
 import numpy as np
+import matplotlib.pyplot as plt
 
 
-copter = dead.copter.DeadCopter(mass=1.3, arm_length=0.8)
-#print(f"copter mass: {copter.__mass}")
+copter = dead.copter.DeadCopter(mass=1.3, arm_length=0.8, K_v=100)
+copter.mass = 2
 
-# dynamics =
-# input: [q0, q1, q2, q3, wx, wy, wz, nx, ny, nz], [ux, uy, uz]
-# output: [q_dot[0:4], w_dot[4:7], n_dot[7:10]]
-#dynam = copter.dynamics([1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0])
-#print(dynam)
+x_cache = []
+for k in range(2000):
+    x = copter.quaternion
+    x_norm = np.linalg.norm(x)
+    x_cache += [copter.euler_angles()]
+    copter.fly_simulate([0, -np.sin(k/50)/100, 0], 0.01)
 
-for k in range(50):
-    x = np.array(copter.state)
-    x_norm = np.linalg.norm(x[0:4])
-    print(x_norm)
-    copter.fly_simulate([k/100, 0, 0], 0.01)
-
-
+plt.plot(x_cache)
+plt.show()
