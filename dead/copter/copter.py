@@ -7,7 +7,7 @@ class DeadCopter:
 
     def __init__(self, **kwargs):
         # system state [q0, q1, q2, q3, wx, wy, wz, nx, ny, nz]
-        self.__state = [1] + [0] * 9
+        self.__state = np.array([1] + [0] * 9)
 
         # SYSTEM PARAMETERS
         # general
@@ -23,7 +23,7 @@ class DeadCopter:
         self.__air_density = 1.225  # kg/m^3              # air density at sea level, 15 deg C
 
         # motors
-        self.__K_v = 1000 / 60  # rps/V                   # motor speed constant
+        self.__K_v = 1000  # rpm/V                        # motor speed constant
         self.__motor_time_constant = 35 / 1000  # s       # motor time constant
         self.__rotor_mass = 10 / 1000  # kg               # rotor mass
         self.__rotor_radius = 15 / 1000  # m              # rotor radius
@@ -45,19 +45,24 @@ class DeadCopter:
             masqueraded_attribute = f"_{self.__class__.__name__}__{key}"
             if masqueraded_attribute in self.__dict__.keys():
                 setattr(self, masqueraded_attribute, kwargs[key])
+            else:
+                raise Exception(f"unknown argument: {key}")
 
+        self.__compute_parameters()
+
+    def __compute_parameters(self):
         # modelling
         self.__n_h = ((self.__mass * self.__gravity_acc) /
                       np.sqrt(self.__num_motors * self.__thrust_coeff
                               * self.__air_density * (self.__prop_diameter ** 4)))
-        self.__k1 = (self.__K_v * (self.__voltage_max - self.__voltage_min)) / 60     # /60 for rps
+        self.__k1 = (self.__K_v * (self.__voltage_max - self.__voltage_min)) / 60  # /60 for rps
         self.__k2 = 1 / self.__motor_time_constant
         self.__k3_x = (2 * self.__n_h) * (self.__thrust_coeff * self.__air_density * (self.__prop_diameter ** 4)) \
-                      * (self.__num_motors * self.__arm_length) / ((2 ** 0.5) * self.__moi_xx)
+            * (self.__num_motors * self.__arm_length) / ((2 ** 0.5) * self.__moi_xx)
         self.__k3_y = (2 * self.__n_h) * (self.__thrust_coeff * self.__air_density * (self.__prop_diameter ** 4)) \
-                      * (self.__num_motors * self.__arm_length) / ((2 ** 0.5) * self.__moi_yy)
+            * (self.__num_motors * self.__arm_length) / ((2 ** 0.5) * self.__moi_yy)
         self.__k3_z = (2 * self.__n_h) * (self.__power_coeff * self.__air_density * (self.__prop_diameter ** 5)) \
-                      * self.__num_motors / (2 * np.pi * self.__moi_zz)
+            * self.__num_motors / (2 * np.pi * self.__moi_zz)
         self.__k4_xy = 0
         self.__k4_z = 2 * np.pi * self.__num_motors * (self.__prop_moi + self.__motor_moi) / self.__moi_zz
         self.__gamma_n = np.diagflat([self.__k3_x, self.__k3_y, self.__k3_z - (self.__k4_z * self.__k2)])
@@ -67,41 +72,52 @@ class DeadCopter:
     def mass(self):
         return self.__mass
 
+    @mass.setter
+    def mass(self, value):
+        # @rj-mo I added this method just for you to have a look
+        # I don't think we need it, so feel free to delete it
+        self.__mass = value
+        self.__compute_parameters()
+
     @property
     def state(self):
         return self.__state
 
-    # return euler angles - only for plotting
+    @property
+    def quaternion(self):
+        return self.__state[0:4]
+
+    def euler_angles(self):
+        """
+        Documentation
+        :return:
+        """
+        q = self.quaternion
+        phi = np.arctan2(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]**2 + q[2]**2))
+        theta = np.arcsin(2*(q[0]*q[2] - q[1]*q[3]))
+        psi = np.arctan2(2*(q[0]*q[3] + q[2]*q[3]), 1 - 2*(q[2]**2 + q[3]**2))
+        return np.array([phi, theta, psi])
 
     def linearisation(self):
         pass
 
     def fly_simulate(self, u, dt):
         def dynamics(_t, state):
-            # define
             attitude_quat = Quaternion(state[0:4])  # attitude as a quaternion
             angular_freq = state[4:7]  # angular frequencies
             rotor_freq = state[7:10]  # rotor frequencies
             control_action = np.array(u)  # control input
-
             angular_freq_quat = Quaternion(np.append(0, angular_freq))
             attitude_quat_dot = list(0.5 * attitude_quat * angular_freq_quat)
-
             af1 = np.diag(self.__moi * angular_freq)  # af = angular_freq  # flatten 3x3 array to 1x3
             angular_freq_cross = np.cross(angular_freq, af1)
             angular_freq_dot = list(np.diag(self.__gamma_n * rotor_freq + self.__gamma_u * u
                                             - np.diagflat(1 / np.diag(self.__moi)) * angular_freq_cross))
-
             rotor_freq_dot = list(self.__k2 * (self.__k1 * control_action - rotor_freq))
-
-            dynamics = list(attitude_quat_dot + angular_freq_dot + rotor_freq_dot)
-
-            return dynamics
+            return attitude_quat_dot + angular_freq_dot + rotor_freq_dot
 
         solution = solve_ivp(dynamics,
                              [0, dt],
                              self.__state)
 
-        self.__state = [solution.y[i][-1] for i in range(10)]
-
-        # normalise quaternion - first 4 elements use pyquaternion function
+        self.__state = solution[:, -1]
