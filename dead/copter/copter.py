@@ -46,7 +46,7 @@ class DeadCopter:
             if masqueraded_attribute in self.__dict__.keys():
                 setattr(self, masqueraded_attribute, kwargs[key])
 
-        # modelling --- the following variables are hidden
+        # modelling
         self.__n_h = ((self.__mass * self.__gravity_acc) /
                       np.sqrt(self.__num_motors * self.__thrust_coeff
                               * self.__air_density * (self.__prop_diameter ** 4)))
