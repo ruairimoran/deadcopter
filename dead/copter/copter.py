@@ -1,4 +1,4 @@
-from pyquaternion import Quaternion
+from pyquaternion import *
 import numpy as np
 from scipy.integrate import solve_ivp
 
@@ -9,7 +9,6 @@ class DeadCopter:
         # system state [q0, q1, q2, q3, wx, wy, wz, nx, ny, nz]
         self.__state = np.array([1] + [0] * 9)
 
-        # SYSTEM PARAMETERS
         # general
         self.__mass = 1.5  # kg                           # total mass of aircraft
         self.__arm_length = 0.225  # m                    # quad arm length
@@ -120,4 +119,6 @@ class DeadCopter:
                              [0, dt],
                              self.__state)
 
-        self.__state = solution[:, -1]
+        self.__state = solution.y[:, -1]
+        not_norm_quaternion = Quaternion(self.__state[0:4]).norm
+        self.__state[0:4] = self.__state[0:4] / not_norm_quaternion
