@@ -71,16 +71,14 @@ class DeadCopter:
     def mass(self):
         return self.__mass
 
-    @mass.setter
-    def mass(self, value):
-        # @rj-mo I added this method just for you to have a look
-        # I don't think we need it, so feel free to delete it
-        self.__mass = value
-        self.__compute_parameters()
-
     @property
     def state(self):
         return self.__state
+
+    @state.setter  # for test reset
+    def state(self, vector):
+        self.__state = vector
+        self.__compute_parameters()
 
     @property
     def quaternion(self):
