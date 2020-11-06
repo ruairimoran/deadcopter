@@ -75,7 +75,7 @@ class DeadCopter:
     def state(self):
         return self.__state
 
-    @state.setter  # for test reset
+    @state.setter  # for reset
     def state(self, vector):
         self.__state = vector
         self.__compute_parameters()
@@ -95,8 +95,33 @@ class DeadCopter:
         psi = np.arctan2(2*(q[0]*q[3] + q[2]*q[3]), 1 - 2*(q[2]**2 + q[3]**2))
         return np.array([phi, theta, psi])
 
-    def linearisation(self):
-        pass
+    def linear_fly_simulate(self, u, dt):
+        def linearised(_t, state):
+            quaternion_vector = np.array([[state[0]], [state[1]], [state[2]]])
+            angular_frequencies = np.array([[state[3]], [state[4]], [state[5]]])
+            rotor_frequencies = np.array([[state[6]], [state[7]], [state[8]]])
+            grouped_state = np.array([[quaternion_vector],
+                                      [angular_frequencies],
+                                      [rotor_frequencies]])
+            zeros = np.zeros([3, 3])
+            identity_3 = np.identity(3)
+            a = np.array([[zeros, 0.5*identity_3, zeros],
+                        [zeros, zeros, self.__gamma_n],
+                        [zeros, zeros, -self.__k2*identity_3]])
+            b = np.array([[zeros],
+                         [self.__gamma_u],
+                         [self.__k2*self.__k1*identity_3]])
+            state_dot = a * grouped_state + b * u
+            print(state_dot)
+            return state_dot
+
+        solution = solve_ivp(linearised,
+                             [0, dt],
+                             self.__state[1:10])
+
+        self.__state = solution.y[:, -1]
+        not_norm_quaternion = Quaternion(self.__state[0:4]).norm
+        self.__state[0:4] = self.__state[0:4] / not_norm_quaternion
 
     def fly_simulate(self, u, dt):
         def dynamics(_t, state):
