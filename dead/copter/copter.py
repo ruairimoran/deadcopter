@@ -97,27 +97,44 @@ class DeadCopter:
 
     def linear_fly_simulate(self, u, dt):
         def linearised(_t, state):
-            quaternion_vector = np.array([[state[0]], [state[1]], [state[2]]])
-            angular_frequencies = np.array([[state[3]], [state[4]], [state[5]]])
-            rotor_frequencies = np.array([[state[6]], [state[7]], [state[8]]])
-            grouped_state = np.array([[quaternion_vector],
-                                      [angular_frequencies],
-                                      [rotor_frequencies]])
+            quaternion_vector = np.array([[state[0]],
+                                          [state[1]],
+                                          [state[2]]])
+            angular_frequencies = np.array([[state[3]],
+                                            [state[4]],
+                                            [state[5]]])
+            rotor_frequencies = np.array([[state[6]],
+                                          [state[7]],
+                                          [state[8]]])
             zeros = np.zeros([3, 3])
             identity_3 = np.identity(3)
             a = np.array([[zeros, 0.5*identity_3, zeros],
-                        [zeros, zeros, self.__gamma_n],
-                        [zeros, zeros, -self.__k2*identity_3]])
+                          [zeros, zeros, self.__gamma_n],
+                          [zeros, zeros, -self.__k2*identity_3]])
             b = np.array([[zeros],
-                         [self.__gamma_u],
-                         [self.__k2*self.__k1*identity_3]])
-            state_dot = a * grouped_state + b * u
-            print(state_dot)
-            return state_dot
+                          [self.__gamma_u],
+                          [self.__k2*self.__k1*identity_3]])
+            a_quaternion_vector = a[0][0] @ quaternion_vector \
+                                + a[0][1] @ angular_frequencies \
+                                + a[0][2] @ rotor_frequencies
+            a_angular_frequencies = a[1][0] @ quaternion_vector \
+                                  + a[1][1] @ angular_frequencies \
+                                  + a[1][2] @ rotor_frequencies
+            a_rotor_frequencies = a[2][0] @ quaternion_vector \
+                                + a[2][1] @ angular_frequencies \
+                                + a[2][2] @ rotor_frequencies
+            a_state = np.array([[a_quaternion_vector],
+                                [a_angular_frequencies],
+                                [a_rotor_frequencies]])
+            # b_u = np.array([[b[0] @ u],
+            #                 [b[1] @ u],
+            #                 [b[2] @ u]])
+            return [np.hstack(a_state)]
 
+        augmented_state = self.__state[1:10]
         solution = solve_ivp(linearised,
                              [0, dt],
-                             self.__state[1:10])
+                             augmented_state)
 
         self.__state = solution.y[:, -1]
         not_norm_quaternion = Quaternion(self.__state[0:4]).norm
