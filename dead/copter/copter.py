@@ -123,20 +123,24 @@ class DeadCopter:
             a_rotor_frequencies = a[2][0] @ quaternion_vector \
                                 + a[2][1] @ angular_frequencies \
                                 + a[2][2] @ rotor_frequencies
-            a_state = np.array([[a_quaternion_vector],
-                                [a_angular_frequencies],
-                                [a_rotor_frequencies]])
-            # b_u = np.array([[b[0] @ u],
-            #                 [b[1] @ u],
-            #                 [b[2] @ u]])
-            return [np.hstack(a_state)]
+            a_state = np.array([a_quaternion_vector[0][0], a_quaternion_vector[1][0], a_quaternion_vector[2][0],
+                                a_angular_frequencies[0][0], a_angular_frequencies[1][0], a_angular_frequencies[2][0],
+                                a_rotor_frequencies[0][0], a_rotor_frequencies[1][0], a_rotor_frequencies[2][0]])
+            ux = np.array([b[0] @ u])
+            uy = np.array([b[1] @ u])
+            uz = np.array([b[2] @ u])
+            b_u = np.array([ux[0][0][0], ux[0][0][1], ux[0][0][2],
+                            uy[0][0][0], uy[0][0][1], uy[0][0][2],
+                            uz[0][0][0], uz[0][0][1], uz[0][0][2]])
+            state_dot = a_state + b_u
+            return state_dot
 
         augmented_state = self.__state[1:10]
         solution = solve_ivp(linearised,
                              [0, dt],
                              augmented_state)
 
-        self.__state = solution.y[:, -1]
+        self.__state[1:10] = solution.y[:, -1]
         not_norm_quaternion = Quaternion(self.__state[0:4]).norm
         self.__state[0:4] = self.__state[0:4] / not_norm_quaternion
 
