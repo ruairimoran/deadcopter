@@ -78,7 +78,6 @@ class DeadCopter:
     @state.setter  # for reset
     def state(self, vector):
         self.__state = vector
-        self.__compute_parameters()
 
     @property
     def quaternion(self):
@@ -94,6 +93,17 @@ class DeadCopter:
         theta = np.arcsin(2*(q[0]*q[2] - q[1]*q[3]))
         psi = np.arctan2(2*(q[0]*q[3] + q[2]*q[3]), 1 - 2*(q[2]**2 + q[3]**2))
         return np.array([phi, theta, psi])
+
+    def linearisation(self):
+        a = np.zeros(shape=(9, 9))
+        b = np.zeros(shape=(9, 1))
+
+        for i in range(3):
+            a[i, 3+i] = 0.5
+            a[3+i, 6+i] = self.__gamma_n[i, i]
+            a[6+i, 6+i] = -self.__k2
+
+        return a, b
 
     def linear_fly_simulate(self, u, dt):
         def linearised(_t, state):

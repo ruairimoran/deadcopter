@@ -12,36 +12,34 @@ class CopterTestCase(unittest.TestCase):
     def test_single_axis_control(self):
         copter = dead.copter.DeadCopter()
         t_sampling = 0.01  # 10ms
-        t_simulation = 5  # simulation time (in s)
+        t_simulation = 0.05  # simulation time (in s)
         num_simulation_points = np.int(np.ceil(t_simulation / t_sampling))
 
-        black_box_euler_test_roll = copter.euler_angles()
-        black_box_euler_test_pitch = copter.euler_angles()
-        black_box_euler_test_yaw = copter.euler_angles()
-
         for k in range(num_simulation_points):
-            black_box_euler_test_roll = np.vstack((black_box_euler_test_roll, copter.euler_angles()))
             copter.fly_simulate([0.001, 0, 0], 0.01)
-        self.assertEqual(black_box_euler_test_roll[:, 1:3].any(), 0, "fail2_roll")
+            euler_angles = copter.euler_angles()
+            self.assertAlmostEqual(euler_angles[1], 0, delta=1e-12)
+            self.assertAlmostEqual(euler_angles[2], 0, delta=1e-12)
 
         copter.state = np.array([1] + [0] * 9)  # reset state
 
         for k in range(num_simulation_points):
-            black_box_euler_test_pitch = np.vstack((black_box_euler_test_pitch, copter.euler_angles()))
             copter.fly_simulate([0, 0.001, 0], 0.01)
-        rollyaw_possible_values = np.array([0, 3.14159265])
-        #self.assertEqual(black_box_euler_test_pitch[:, 0:3:2].all(), rollyaw_possible_values.any(), "fail2_pitch")
+            euler_angles = copter.euler_angles()
+            self.assertAlmostEqual(euler_angles[0], 0, delta=1e-12)
+            self.assertAlmostEqual(euler_angles[2], 0, delta=1e-12)
 
         copter.state = np.array([1] + [0] * 9)  # reset state
 
         for k in range(num_simulation_points):
-            black_box_euler_test_yaw = np.vstack((black_box_euler_test_yaw, copter.euler_angles()))
             copter.fly_simulate([0, 0, 0.001], 0.01)
-        self.assertEqual(black_box_euler_test_yaw[:, 0:2].any(), 0, "fail2_yaw")
+            euler_angles = copter.euler_angles()
+            self.assertAlmostEqual(euler_angles[0], 0, delta=1e-12)
+            self.assertAlmostEqual(euler_angles[1], 0, delta=1e-12)
 
         copter.state = np.array([1] + [0] * 9)  # reset state
 
-    # compare with linearised system state
+
 
 if __name__ == '__main__':
     unittest.main()
