@@ -1,6 +1,7 @@
 from pyquaternion import *
 import numpy as np
 from scipy.integrate import solve_ivp
+import control as C
 
 
 class DeadCopter:
@@ -96,63 +97,43 @@ class DeadCopter:
 
     def linearisation(self):
         a = np.zeros(shape=(9, 9))
-        b = np.zeros(shape=(9, 1))
-
+        b = np.zeros(shape=(9, 3))
+        c = np.eye(9)
         for i in range(3):
             a[i, 3+i] = 0.5
             a[3+i, 6+i] = self.__gamma_n[i, i]
             a[6+i, 6+i] = -self.__k2
+            b[3+i, i] = self.__gamma_u[i, i]
+            b[6+i, i] = self.__k2 * self.__k1
 
-        return a, b
+        return a, b, c
+
+    def discretisation(self, a, b, c, d, dt):
+        discrete_system = C.ss(a, b, c, d, dt)
+        Ad = discrete_system.A
+        Bd = discrete_system.B
+        Cd = discrete_system.C
+        return Ad, Bd, Cd
+
 
     def linear_fly_simulate(self, u, dt):
-        def linearised(_t, state):
-            quaternion_vector = np.array([[state[0]],
-                                          [state[1]],
-                                          [state[2]]])
-            angular_frequencies = np.array([[state[3]],
-                                            [state[4]],
-                                            [state[5]]])
-            rotor_frequencies = np.array([[state[6]],
-                                          [state[7]],
-                                          [state[8]]])
-            zeros = np.zeros([3, 3])
-            identity_3 = np.identity(3)
-            a = np.array([[zeros, 0.5*identity_3, zeros],
-                          [zeros, zeros, self.__gamma_n],
-                          [zeros, zeros, -self.__k2*identity_3]])
-            b = np.array([[zeros],
-                          [self.__gamma_u],
-                          [self.__k2*self.__k1*identity_3]])
-            a_quaternion_vector = a[0][0] @ quaternion_vector \
-                                + a[0][1] @ angular_frequencies \
-                                + a[0][2] @ rotor_frequencies
-            a_angular_frequencies = a[1][0] @ quaternion_vector \
-                                  + a[1][1] @ angular_frequencies \
-                                  + a[1][2] @ rotor_frequencies
-            a_rotor_frequencies = a[2][0] @ quaternion_vector \
-                                + a[2][1] @ angular_frequencies \
-                                + a[2][2] @ rotor_frequencies
-            a_state = np.array([a_quaternion_vector[0][0], a_quaternion_vector[1][0], a_quaternion_vector[2][0],
-                                a_angular_frequencies[0][0], a_angular_frequencies[1][0], a_angular_frequencies[2][0],
-                                a_rotor_frequencies[0][0], a_rotor_frequencies[1][0], a_rotor_frequencies[2][0]])
-            ux = np.array([b[0] @ u])
-            uy = np.array([b[1] @ u])
-            uz = np.array([b[2] @ u])
-            b_u = np.array([ux[0][0][0], ux[0][0][1], ux[0][0][2],
-                            uy[0][0][0], uy[0][0][1], uy[0][0][2],
-                            uz[0][0][0], uz[0][0][1], uz[0][0][2]])
-            state_dot = a_state + b_u
-            return state_dot
+        def linearised(_t, reduced_state):
+            control_action = np.asarray(u).reshape(3,)
+            x = reduced_state[0:3]
+            w = reduced_state[3:6]
+            n = reduced_state[6:9]
+            x_dot = 0.5*w
+            w_dot = self.__gamma_n@n + self.__gamma_u@control_action
+            n_dot = -self.__k2*n + self.__k1*self.__k2*control_action
+            return x_dot.tolist() + w_dot.tolist() + n_dot.tolist()
 
-        augmented_state = self.__state[1:10]
+        initial_state = self.__state
         solution = solve_ivp(linearised,
                              [0, dt],
-                             augmented_state)
-
-        self.__state[1:10] = solution.y[:, -1]
-        not_norm_quaternion = Quaternion(self.__state[0:4]).norm
-        self.__state[0:4] = self.__state[0:4] / not_norm_quaternion
+                             initial_state[1:10])
+        updated_reduced_state = solution.y[:, -1]
+        q0 = np.sqrt(updated_reduced_state[0]**2 + updated_reduced_state[1]**2 + updated_reduced_state[2]**2)
+        self.__state = [q0] + updated_reduced_state.tolist()
 
     def fly_simulate(self, u, dt):
         def dynamics(_t, state):
@@ -172,7 +153,6 @@ class DeadCopter:
         solution = solve_ivp(dynamics,
                              [0, dt],
                              self.__state)
-
         self.__state = solution.y[:, -1]
         not_norm_quaternion = Quaternion(self.__state[0:4]).norm
         self.__state[0:4] = self.__state[0:4] / not_norm_quaternion
