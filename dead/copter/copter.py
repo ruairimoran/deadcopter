@@ -25,12 +25,11 @@ class DeadCopter:
         # motors
         self.__K_v = 1000  # rpm/V                        # motor speed constant
         self.__motor_time_constant = 35 / 1000  # s       # motor time constant
-        self.__rotor_mass = 10 / 1000  # kg               # rotor mass
+        self.__rotor_mass = 40 / 1000  # kg               # rotor mass
         self.__rotor_radius = 15 / 1000  # m              # rotor radius
-        self.__motor_mass = 50 / 1000  # kg               # total mass of motor
+        self.__motor_mass = 100 / 1000  # kg               # total mass of motor
         self.__voltage_max = 14  # V                      # max voltage to motor
-        self.__voltage_min = 10  # V                      # min voltage to motor
-        self.__motor_moi = 1  # kg.m^2                    # motor moment of inertia
+        self.__voltage_min = 1.4  # V                      # min voltage to motor
 
         # props
         self.__thrust_coeff = 0.1                         # thrust coefficient
@@ -52,8 +51,9 @@ class DeadCopter:
 
     def __compute_parameters(self):
         # modelling
-        self.__n_h = ((self.__mass * self.__gravity_acc) /
-                      np.sqrt(self.__num_motors * self.__thrust_coeff
+        self.__motor_moi = self.__rotor_mass * self.__rotor_radius ** 2  # kg.m^2                    # motor moment of inertia
+        self.__n_h = np.sqrt((self.__mass * self.__gravity_acc) /
+                             (self.__num_motors * self.__thrust_coeff
                               * self.__air_density * (self.__prop_diameter ** 4)))
         self.__k1 = (self.__K_v * (self.__voltage_max - self.__voltage_min)) / 60  # /60 for rps
         self.__k2 = 1 / self.__motor_time_constant
@@ -108,8 +108,10 @@ class DeadCopter:
 
         return a, b, c
 
-    def discretisation(self, a, b, c, d, dt):
-        discrete_system = C.ss(a, b, c, d, dt)
+    def discretisation(self, dt):
+        a, b, c = self.linearisation()  # return linearised dynamics matrices
+        continuous_system = C.ss(a, b, c, 0)
+        discrete_system = C.c2d(continuous_system, dt)
         Ad = discrete_system.A
         Bd = discrete_system.B
         Cd = discrete_system.C
@@ -117,7 +119,7 @@ class DeadCopter:
 
 
     def linear_fly_simulate(self, u, dt):
-        def linearised(_t, reduced_state):
+        def linear_dynamics(_t, reduced_state):
             control_action = np.asarray(u).reshape(3,)
             x = reduced_state[0:3]
             w = reduced_state[3:6]
@@ -128,24 +130,24 @@ class DeadCopter:
             return x_dot.tolist() + w_dot.tolist() + n_dot.tolist()
 
         initial_state = self.__state
-        solution = solve_ivp(linearised,
+        solution = solve_ivp(linear_dynamics,
                              [0, dt],
                              initial_state[1:10])
         updated_reduced_state = solution.y[:, -1]
-        q0 = np.sqrt(updated_reduced_state[0]**2 + updated_reduced_state[1]**2 + updated_reduced_state[2]**2)
+        q0 = np.sqrt(1 - updated_reduced_state[0]**2 + updated_reduced_state[1]**2 + updated_reduced_state[2]**2)
         self.__state = [q0] + updated_reduced_state.tolist()
 
     def fly_simulate(self, u, dt):
         def dynamics(_t, state):
+            control_action = np.asarray(u).reshape(3,)  # control input
             attitude_quat = Quaternion(state[0:4])  # attitude as a quaternion
             angular_freq = state[4:7]  # angular frequencies
             rotor_freq = state[7:10]  # rotor frequencies
-            control_action = np.array(u)  # control input
             angular_freq_quat = Quaternion(np.append(0, angular_freq))
             attitude_quat_dot = list(0.5 * attitude_quat * angular_freq_quat)
             af1 = np.diag(self.__moi * angular_freq)  # af = angular_freq  # flatten 3x3 array to 1x3
             angular_freq_cross = np.cross(angular_freq, af1)
-            angular_freq_dot = list(np.diag(self.__gamma_n * rotor_freq + self.__gamma_u * u
+            angular_freq_dot = list(np.diag(self.__gamma_n * rotor_freq + self.__gamma_u * control_action
                                             - np.diagflat(1 / np.diag(self.__moi)) * angular_freq_cross))
             rotor_freq_dot = list(self.__k2 * (self.__k1 * control_action - rotor_freq))
             return attitude_quat_dot + angular_freq_dot + rotor_freq_dot
