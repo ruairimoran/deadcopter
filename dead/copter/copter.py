@@ -84,12 +84,15 @@ class DeadCopter:
     def quaternion(self):
         return self.__state[0:4]
 
-    def euler_angles(self):
+    def euler_angles(self, measured_quaternion):
         """
         Documentation
         :return:
         """
         q = self.quaternion
+        if measured_quaternion != 0:
+            q = measured_quaternion
+
         phi = np.arctan2(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]**2 + q[2]**2))
         theta = np.arcsin(2*(q[0]*q[2] - q[1]*q[3]))
         psi = np.arctan2(2*(q[0]*q[3] + q[2]*q[3]), 1 - 2*(q[2]**2 + q[3]**2))
@@ -115,7 +118,8 @@ class DeadCopter:
         Ad = discrete_system.A
         Bd = discrete_system.B
         Cd = discrete_system.C
-        return Ad, Bd, Cd
+        Dd = discrete_system.D
+        return Ad, Bd, Cd, Dd
 
 
     def linear_fly_simulate(self, u, dt):
