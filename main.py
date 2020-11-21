@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import control as C
 
-copter = dead.copter.DeadCopter(mass=1.3, arm_length=0.8, K_v=100)
+copter = dead.copter.DeadCopter(mass=1.5, arm_length=0.225, K_v=1000)
 
 # Simulation parameters
 t_sampling = 0.01  # 10 ms
@@ -12,8 +12,7 @@ num_simulation_points = np.int(np.ceil(t_simulation / t_sampling))  # for simula
 t_span = np.arange(num_simulation_points+1) * t_sampling  # for plot
 
 # System design
-Ad, Bd, Cd = copter.discretisation(0.1)  # return discrete matrices, dt=0.1
-# print(Bd)
+Ad, Bd, Cd = copter.discretisation(t_sampling)  # return discrete matrices, arg=dt
 
 # Controllability check
 controllability_matrix = C.ctrb(Ad, Bd)
@@ -42,11 +41,13 @@ solution_P_Kf, eigenvalues_cl_Kf, negative_gain_L_Kf = C.dare(Ad, Cd, Q_Kf, R_Kf
 gain_L_Kf = -negative_gain_L_Kf
 # print(eigenvalues_cl_Kf)
 
-# Simulation controller
+# Simulation
 copter.state = [0.9994, 0.0044, 0.0251, 0.0249, 0, 0, 0, 0, 0, 0]  # initial state offset from equilibrium
+state_cache = copter.state
 euler_angle_cache = copter.euler_angles(0)  # 0 for use of state
 
 state_hat = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+state_hat_cache = state_hat
 euler_state_hat_cache = copter.euler_angles(state_hat[0:4])
 
 for k in range(num_simulation_points):
@@ -68,7 +69,30 @@ for k in range(num_simulation_points):
     state_hat = [state_hat_q0] + state_hat.tolist()
     euler_state_hat_cache = np.vstack((euler_state_hat_cache, copter.euler_angles(state_hat[0:4])))
 
-print(np.shape(euler_angle_cache))
-plt.plot(t_span, np.hstack((np.rad2deg(euler_angle_cache), np.rad2deg(euler_state_hat_cache))))
+    state_cache = np.vstack((state_cache, copter.state))
+    state_hat_cache = np.vstack((state_hat_cache, state_hat))
+
+# plot euler angles cache
+e_plot = plt.plot(t_span, np.hstack((np.rad2deg(euler_angle_cache), np.rad2deg(euler_state_hat_cache))))
+plt.title("euler angles")
 plt.legend(["roll", "pitch", "yaw", "roll_estimate", "pitch_estimate", "yaw_estimate"])
+plt.show()
+
+# plot quaternion cache
+q_plot = plt.plot(t_span, np.hstack((state_cache[:, 0:4], state_hat_cache[:, 0:4])))
+plt.title("quaternion")
+plt.legend(["q0", "q1", "q2", "q3", "q0_hat", "q1_hat", "q2_hat", "q3_hat"])
+plt.ylim([-0.03, 0.03])
+plt.show()
+
+# plot angular frequency cache
+w_plot = plt.plot(t_span, np.hstack((state_cache[:, 4:7], state_hat_cache[:, 4:7])))
+plt.title("angular frequency")
+plt.legend(["w0", "w1", "w2", "w0_hat", "w1_hat", "w2_hat"])
+plt.show()
+
+# plot rotation frequency cache
+n_plot = plt.plot(t_span, np.hstack((state_cache[:, 7:10], state_hat_cache[:, 7:10])))
+plt.title("rotation frequency")
+plt.legend(["n0", "n1", "n2", "n0_hat", "n1_hat", "n2_hat"])
 plt.show()

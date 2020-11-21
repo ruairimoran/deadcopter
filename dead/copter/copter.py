@@ -26,8 +26,8 @@ class DeadCopter:
         self.__K_v = 1000  # rpm/V                        # motor speed constant
         self.__motor_time_constant = 35 / 1000  # s       # motor time constant
         self.__rotor_mass = 40 / 1000  # kg               # rotor mass
-        self.__rotor_radius = 15 / 1000  # m              # rotor radius
-        self.__motor_mass = 100 / 1000  # kg               # total mass of motor
+        self.__rotor_radius = 18 / 1000  # m              # rotor radius
+        self.__motor_mass = 112 / 1000  # kg               # total mass of motor
         self.__voltage_max = 14  # V                      # max voltage to motor
         self.__voltage_min = 1.4  # V                      # min voltage to motor
 
@@ -51,20 +51,20 @@ class DeadCopter:
 
     def __compute_parameters(self):
         # modelling
-        self.__motor_moi = self.__rotor_mass * self.__rotor_radius ** 2  # kg.m^2                    # motor moment of inertia
+        self.__motor_moi = self.__rotor_mass * (self.__rotor_radius**2)
         self.__n_h = np.sqrt((self.__mass * self.__gravity_acc) /
                              (self.__num_motors * self.__thrust_coeff
-                              * self.__air_density * (self.__prop_diameter ** 4)))
+                              * self.__air_density * (self.__prop_diameter**4)))
         self.__k1 = (self.__K_v * (self.__voltage_max - self.__voltage_min)) / 60  # /60 for rps
         self.__k2 = 1 / self.__motor_time_constant
-        self.__k3_x = (2 * self.__n_h) * (self.__thrust_coeff * self.__air_density * (self.__prop_diameter ** 4)) \
-            * (self.__num_motors * self.__arm_length) / ((2 ** 0.5) * self.__moi_xx)
-        self.__k3_y = (2 * self.__n_h) * (self.__thrust_coeff * self.__air_density * (self.__prop_diameter ** 4)) \
-            * (self.__num_motors * self.__arm_length) / ((2 ** 0.5) * self.__moi_yy)
-        self.__k3_z = (2 * self.__n_h) * (self.__power_coeff * self.__air_density * (self.__prop_diameter ** 5)) \
-            * self.__num_motors / (2 * np.pi * self.__moi_zz)
+        self.__k3_x = (2 * self.__n_h * self.__thrust_coeff * self.__air_density * (self.__prop_diameter**4) \
+            * self.__num_motors * self.__arm_length) / ((2**0.5) * self.__moi_xx)
+        self.__k3_y = (2 * self.__n_h * self.__thrust_coeff * self.__air_density * (self.__prop_diameter**4) \
+            * self.__num_motors * self.__arm_length) / ((2**0.5) * self.__moi_yy)
+        self.__k3_z = (2 * self.__n_h * self.__power_coeff * self.__air_density * (self.__prop_diameter**5) \
+            * self.__num_motors) / (2 * np.pi * self.__moi_zz)
         self.__k4_xy = 0
-        self.__k4_z = 2 * np.pi * self.__num_motors * (self.__prop_moi + self.__motor_moi) / self.__moi_zz
+        self.__k4_z = (2 * np.pi * self.__num_motors * (self.__prop_moi + self.__motor_moi)) / self.__moi_zz
         self.__gamma_n = np.diagflat([self.__k3_x, self.__k3_y, self.__k3_z - (self.__k4_z * self.__k2)])
         self.__gamma_u = np.diagflat([0, 0, self.__k4_z * self.__k2 * self.__k1])
 
@@ -97,9 +97,13 @@ class DeadCopter:
         Documentation
         :return:
         """
-        q = self.quaternion
-        if np.array(measured_quaternion).all() != 0:
-            q = measured_quaternion
+        if measured_quaternion != 0:
+            if np.shape(measured_quaternion) != (4,):
+                raise Exception(f"Error with quaternion input: {measured_quaternion}")
+
+        q = measured_quaternion
+        if measured_quaternion == 0:
+            q = self.quaternion
 
         phi = np.arctan2(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]**2 + q[2]**2))
         theta = np.arcsin(2*(q[0]*q[2] - q[1]*q[3]))
@@ -147,7 +151,6 @@ class DeadCopter:
                              initial_state[1:10])
         updated_reduced_state = solution.y[:, -1]
         q0 = self.solve_q0(updated_reduced_state[0:3])
-        #q0 = np.sqrt(1 - updated_reduced_state[0]**2 + updated_reduced_state[1]**2 + updated_reduced_state[2]**2)
         self.__state = [q0] + updated_reduced_state.tolist()
 
     def fly_simulate(self, u, dt):
@@ -170,6 +173,3 @@ class DeadCopter:
                              self.__state)
         self.__state = solution.y[:, -1]
         self.__state[0:4] = self.normalise_quaternion(self.__state[0:4])
-
-        #not_norm_quaternion = Quaternion(self.__state[0:4]).norm
-        #self.__state[0:4] = self.__state[0:4] / not_norm_quaternion
