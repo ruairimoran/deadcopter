@@ -12,8 +12,8 @@ num_simulation_points = np.int(np.ceil(t_simulation / t_sampling))  # for simula
 t_span = np.arange(num_simulation_points+1) * t_sampling  # for plot
 
 # System design
-Ad, Bd, Cd, Dd = copter.discretisation(0.1)  # return discrete matrices, dt=0.1
-# print(Dd)
+Ad, Bd, Cd = copter.discretisation(0.1)  # return discrete matrices, dt=0.1
+# print(Bd)
 
 # Controllability check
 controllability_matrix = C.ctrb(Ad, Bd)
@@ -34,27 +34,41 @@ solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(Ad, Bd, Q_lqr, 
 gain_K_lqr = -negative_gain_K_lqr
 # print(eigenvalues_cl_lqr)
 
-# # Kalman filter design
-# nC = Cd.shape[1]
-# nD = Dd.shape[1]
-# W_d = 0.1 * np.eye(nC)  # disturbance covariance
-# W_n = 0.1  # noise covariance
-# solution_P_Kf, eigenvalues_cl_Kf, negative_gain_K_Kf = C.dare(Cd.T, Dd.T, W_d, W_n)
-# gain_K_Kf = -negative_gain_K_Kf
+# Kalman filter design
+nC = Cd.shape[1]
+Q_Kf = 1 * np.eye(nA)
+R_Kf = 1 * np.eye(nC)
+solution_P_Kf, eigenvalues_cl_Kf, negative_gain_L_Kf = C.dare(Ad, Cd, Q_Kf, R_Kf)
+gain_L_Kf = -negative_gain_L_Kf
 # print(eigenvalues_cl_Kf)
 
 # Simulation controller
 copter.state = [0.9994, 0.0044, 0.0251, 0.0249, 0, 0, 0, 0, 0, 0]  # initial state offset from equilibrium
-euler_angle_cache = copter.euler_angles(0)
+euler_angle_cache = copter.euler_angles(0)  # 0 for use of state
+
 state_hat = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 euler_state_hat_cache = copter.euler_angles(state_hat[0:4])
+
 for k in range(num_simulation_points):
     control_action = gain_K_lqr @ copter.state[1:10]
-    y = Cd @ copter.state[0:6]
+
+    y = np.asarray(Cd @ copter.state[1:10]).reshape(9,)
+    #y_q0 = copter.solve_q0(y[0:3])
+    #y = [y_q0] + y.tolist()
+
     copter.fly_simulate(control_action, t_sampling)
-    euler_angle_cache = np.vstack((euler_angle_cache, copter.euler_angles(0)))
-    y_hat = Cd @ state_hat
-    euler_state_hat_cache = np.vstack((euler_state_hat_cache, copter.euler_angles(y_hat[0:4])))
-plt.plot(t_span, np.rad2deg(euler_angle_cache))
-plt.legend(["roll", "pitch", "yaw"])
+    euler_angle_cache = np.vstack((euler_angle_cache, copter.euler_angles(0)))  # 0 for use of state
+
+    y_hat = np.asarray(Cd @ state_hat[1:10]).reshape(9,)
+    #y_hat_q0 = copter.solve_q0(y_hat[0:3])
+    #y_hat = [y_hat_q0] + y_hat.tolist()
+
+    state_hat = np.asarray(Ad @ state_hat[1:10] + (Bd @ control_action.T).T + gain_L_Kf @ (y_hat - y)).reshape(9,)
+    state_hat_q0 = copter.solve_q0(state_hat[0:3])
+    state_hat = [state_hat_q0] + state_hat.tolist()
+    euler_state_hat_cache = np.vstack((euler_state_hat_cache, copter.euler_angles(state_hat[0:4])))
+
+print(np.shape(euler_angle_cache))
+plt.plot(t_span, np.hstack((np.rad2deg(euler_angle_cache), np.rad2deg(euler_state_hat_cache))))
+plt.legend(["roll", "pitch", "yaw", "roll_estimate", "pitch_estimate", "yaw_estimate"])
 plt.show()

@@ -84,13 +84,21 @@ class DeadCopter:
     def quaternion(self):
         return self.__state[0:4]
 
+    def normalise_quaternion(self, non_norm_quaternion):
+        norm = Quaternion(non_norm_quaternion).norm
+        return non_norm_quaternion / norm
+
+    def solve_q0(self, vector):
+        q0 = np.sqrt(1 - vector[0]**2 - vector[1]**2 - vector[2]**2)
+        return q0
+
     def euler_angles(self, measured_quaternion):
         """
         Documentation
         :return:
         """
         q = self.quaternion
-        if measured_quaternion != 0:
+        if np.array(measured_quaternion).all() != 0:
             q = measured_quaternion
 
         phi = np.arctan2(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]**2 + q[2]**2))
@@ -108,6 +116,7 @@ class DeadCopter:
             a[6+i, 6+i] = -self.__k2
             b[3+i, i] = self.__gamma_u[i, i]
             b[6+i, i] = self.__k2 * self.__k1
+            c[6+i, 6+i] = 0
 
         return a, b, c
 
@@ -118,8 +127,7 @@ class DeadCopter:
         Ad = discrete_system.A
         Bd = discrete_system.B
         Cd = discrete_system.C
-        Dd = discrete_system.D
-        return Ad, Bd, Cd, Dd
+        return Ad, Bd, Cd
 
 
     def linear_fly_simulate(self, u, dt):
@@ -138,7 +146,8 @@ class DeadCopter:
                              [0, dt],
                              initial_state[1:10])
         updated_reduced_state = solution.y[:, -1]
-        q0 = np.sqrt(1 - updated_reduced_state[0]**2 + updated_reduced_state[1]**2 + updated_reduced_state[2]**2)
+        q0 = self.solve_q0(updated_reduced_state[0:3])
+        #q0 = np.sqrt(1 - updated_reduced_state[0]**2 + updated_reduced_state[1]**2 + updated_reduced_state[2]**2)
         self.__state = [q0] + updated_reduced_state.tolist()
 
     def fly_simulate(self, u, dt):
@@ -160,5 +169,7 @@ class DeadCopter:
                              [0, dt],
                              self.__state)
         self.__state = solution.y[:, -1]
-        not_norm_quaternion = Quaternion(self.__state[0:4]).norm
-        self.__state[0:4] = self.__state[0:4] / not_norm_quaternion
+        self.__state[0:4] = self.normalise_quaternion(self.__state[0:4])
+
+        #not_norm_quaternion = Quaternion(self.__state[0:4]).norm
+        #self.__state[0:4] = self.__state[0:4] / not_norm_quaternion
