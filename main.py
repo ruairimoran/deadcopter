@@ -25,54 +25,49 @@ copter.controllability(Ad, Bd, n_control)  # number of states
 # Observability check
 copter.observability(Ad, Cd, n_observe)  # n = number of observed states
 
-# LQR design
-Q_lqr = np.diagflat([1850, 1850, 1100, 120, 12, 12, 1, 1, 1])  # 1 * np.eye(nA)
-R_lqr = np.diagflat([0.3, 0.3, 0.3])  # 1 * np.eye(nB)
-solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(Ad, Bd, Q_lqr, R_lqr)
-gain_K_lqr = -negative_gain_K_lqr
-# print(eigenvalues_cl_lqr)
+for z in range(2000, 6000, 1000):
 
-# Kalman filter design
-Q_Kf = 1000 * np.eye(nA)
-R_Kf = 1 * np.eye(nC)
-solution_P_Kf, eigenvalues_cl_Kf, negative_gain_L_Kf = C.dare(Ad.T, Cd.T, Q_Kf, R_Kf)
-gain_L_Kf = -negative_gain_L_Kf
-# print(eigenvalues_cl_Kf)
+    # LQR design
+    Q_lqr = np.diagflat([1850, 1850, 1850, 12, 12, 12, 1, 1, 1])  # np.eye(nA)
+    R_lqr = np.diagflat([0.3, 0.3, 0.3])  # np.eye(nB)
+    solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(Ad, Bd, Q_lqr, R_lqr)
+    gain_K_lqr = -negative_gain_K_lqr
 
-# Simulation
-copter.state = [0.9994, 0.0044, 0.0251, 0.0249, 0.1, 0.1, 0.1, 0, 0, 0]  # initial state offset from equilibrium
-state_cache = copter.state
-euler_angle_cache = copter.euler_angles(0)  # 0 for use of state
+    # Kalman filter design
+    Q_Kf = 1 * np.eye(nA)
+    R_Kf = 1 * np.eye(nC)
+    solution_P_Kf, eigenvalues_cl_Kf, negative_gain_L_Kf = C.dare(Ad.T, Cd.T, Q_Kf, R_Kf)
+    gain_L_Kf = -negative_gain_L_Kf
 
-state_hat = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-state_hat_cache = state_hat
-euler_state_hat_cache = copter.euler_angles(state_hat[0:4])
+    # Simulation
+    copter.state = [0.9994, 0.0044, 0.0251, 0.0249, 0.1, 0.1, 0.1, 0, 0, 0]  # initial state offset from equilibrium
+    state_cache = copter.state
+    euler_angle_cache = copter.euler_angles(0)  # 0 for use of state
 
-for k in range(num_simulation_points):
-    kick = (k == num_simulation_points/2) * np.array([1, 1, 1e-4])  # yaw extremely susceptible to change
-    control_action = (gain_K_lqr @ copter.state[1:10]) + kick
+    state_hat = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    state_hat_cache = state_hat
+    euler_state_hat_cache = copter.euler_angles(state_hat[0:4])
 
-    y = np.asarray(Cd @ copter.state[1:10]).reshape(9,)
+    for k in range(num_simulation_points):
+        kick = (k == num_simulation_points/2) * np.array([1, 1, 1e-4])  # yaw extremely susceptible to change
+        control_action = (gain_K_lqr @ copter.state[1:10]) + kick
+        y = np.asarray(Cd @ copter.state[1:10]).reshape(9,)
+        copter.fly_simulate(control_action, t_sampling)
+        euler_angle_cache = np.vstack((euler_angle_cache, copter.euler_angles(0)))  # 0 for use of state
+        y_hat = np.asarray(Cd @ state_hat[1:10]).reshape(9,)
+        state_hat = np.asarray(Ad @ state_hat[1:10] + (Bd @ control_action.T).T + gain_L_Kf @ (y_hat - y)).reshape(9,)
+        state_hat_q0 = copter.solve_q0(state_hat[0:3])
+        state_hat = [state_hat_q0] + state_hat.tolist()
+        euler_state_hat_cache = np.vstack((euler_state_hat_cache, copter.euler_angles(state_hat[0:4])))
+        state_cache = np.vstack((state_cache, copter.state))
+        state_hat_cache = np.vstack((state_hat_cache, state_hat))
 
-    copter.fly_simulate(control_action, t_sampling)
-    euler_angle_cache = np.vstack((euler_angle_cache, copter.euler_angles(0)))  # 0 for use of state
-
-    y_hat = np.asarray(Cd @ state_hat[1:10]).reshape(9,)
-
-    state_hat = np.asarray(Ad @ state_hat[1:10] + (Bd @ control_action.T).T + gain_L_Kf @ (y_hat - y)).reshape(9,)
-    state_hat_q0 = copter.solve_q0(state_hat[0:3])
-    state_hat = [state_hat_q0] + state_hat.tolist()
-    euler_state_hat_cache = np.vstack((euler_state_hat_cache, copter.euler_angles(state_hat[0:4])))
-
-    state_cache = np.vstack((state_cache, copter.state))
-    state_hat_cache = np.vstack((state_hat_cache, state_hat))
-
-# plot euler angles cache
-# plt.subplot(2, 2, 1)
-plt.plot(t_span, np.rad2deg(euler_angle_cache))
-plt.plot(t_span, np.rad2deg(euler_state_hat_cache), '--')
-plt.title("euler angles  (degrees)")
-plt.legend(["roll", "pitch", "yaw", "roll_estimate", "pitch_estimate", "yaw_estimate"], loc="upper right")
+    # plot euler angles cache
+    # plt.subplot(2, 2, 1)
+    plt.plot(t_span, np.rad2deg(euler_angle_cache))
+    plt.plot(t_span, np.rad2deg(euler_state_hat_cache), '--')
+    plt.title("euler angles  (degrees)")
+    plt.legend(["roll", "pitch", "yaw", "roll_estimate", "pitch_estimate", "yaw_estimate"], loc="upper right")
 
 # # plot quaternion cache
 # plt.subplot(2, 2, 2)
