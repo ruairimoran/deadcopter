@@ -84,6 +84,16 @@ class DeadCopter:
     def quaternion(self):
         return self.__state[0:4]
 
+    def controllability(self, a, b, n):
+        ctrb_rank = np.linalg.matrix_rank(C.ctrb(a, b))
+        if ctrb_rank < n:
+            raise Exception(f"System not controllable. Ctrb Matrix Rank ({ctrb_rank}) < States ({n})")
+
+    def observability(self, a, c, n):
+        obsv_rank = np.linalg.matrix_rank(C.obsv(a.T, c.T))
+        if obsv_rank < n:
+            raise Exception(f"System not observable. Obsv Matrix Rank ({obsv_rank}) < Measured States ({n})")
+
     def normalise_quaternion(self, non_norm_quaternion):
         norm = Quaternion(non_norm_quaternion).norm
         return non_norm_quaternion / norm
