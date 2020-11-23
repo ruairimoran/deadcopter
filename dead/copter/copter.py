@@ -38,6 +38,9 @@ class DeadCopter:
         self.__prop_diameter = 9 * 0.0254  # m            # prop diameter
         self.__prop_moi = 1  # kg.m^2                     # prop moment of inertia
 
+        # noise
+        self.__disturbance_covariance = np.diagflat([1e-6] * 9)
+
         # parse `kwargs` and set as attribute, provided the keyword corresponds
         # to one of the variables defined above
         for key in kwargs:
@@ -90,9 +93,21 @@ class DeadCopter:
             raise Exception(f"System not controllable. Ctrb Matrix Rank ({ctrb_rank}) < States ({n})")
 
     def observability(self, a, c, n):
-        obsv_rank = np.linalg.matrix_rank(C.obsv(a.T, c.T))
+        obsv_rank = np.linalg.matrix_rank(C.obsv(a, c))
         if obsv_rank < n:
             raise Exception(f"System not observable. Obsv Matrix Rank ({obsv_rank}) < Measured States ({n})")
+
+    def LQR(self, a, b):
+        Q_lqr = np.diagflat([1850, 1850, 1100, 12, 12, 12, 1, 1, 1])  # a.shape[0]
+        R_lqr = np.diagflat([0.3, 0.3, 0.3])  # b.shape[1]
+        solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(a, b, Q_lqr, R_lqr)
+        return -negative_gain_K_lqr
+
+    def Kf(self, a, c):
+        Q_Kf = np.diagflat([100, 100, 100, 1000, 1000, 1000, 1000, 1000, 1000])  # a.shape[0]
+        R_Kf = np.diagflat([100, 100, 100, 800, 800, 800])  # c.shape[0]
+        solution_P_Kf, eigenvalues_cl_Kf, negative_gain_L_Kf = C.dare(a.T, c.T, Q_Kf, R_Kf)
+        return -negative_gain_L_Kf.T
 
     def normalise_quaternion(self, non_norm_quaternion):
         norm = Quaternion(non_norm_quaternion).norm
@@ -123,14 +138,16 @@ class DeadCopter:
     def linearisation(self):
         a = np.zeros(shape=(9, 9))
         b = np.zeros(shape=(9, 3))
-        c = np.eye(9)
+        c = np.zeros(shape=(6, 9))
         for i in range(3):
             a[i, 3+i] = 0.5
             a[3+i, 6+i] = self.__gamma_n[i, i]
             a[6+i, 6+i] = -self.__k2
             b[3+i, i] = self.__gamma_u[i, i]
             b[6+i, i] = self.__k2 * self.__k1
-            c[6+i, 6+i] = 0
+
+        for i in range(6):
+            c[i, i] = 1
 
         return a, b, c
 
@@ -182,4 +199,5 @@ class DeadCopter:
                              [0, dt],
                              self.__state)
         self.__state = solution.y[:, -1]
+        self.__state[1:10] += np.random.multivariate_normal(np.zeros(9, ), self.__disturbance_covariance)
         self.__state[0:4] = self.normalise_quaternion(self.__state[0:4])
