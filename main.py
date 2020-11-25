@@ -47,9 +47,9 @@ for z in range(1):  # 2000, 6000, 1000):
     for k in range(num_simulation_points):
         # kick = (k == num_simulation_points/2) * 1e-1 * np.array([1, 1, 1e-4])  # yaw extremely susceptible to change
         control_action = (gain_K_lqr @ copter.state[1:10])  # + kick
-        v_omega = np.random.multivariate_normal(np.zeros((3, )), np.identity(3))
+        v_omega = np.random.multivariate_normal(np.zeros((3,)), np.identity(3))
         y = np.asarray(Cd @ copter.state[1:10]).reshape(6,)
-        y[3:7] += omega_noise_multiplier * v_omega
+        y[3:6] += omega_noise_multiplier * v_omega
         copter.fly_simulate(control_action, t_sampling)
         euler_angle_cache = np.vstack((euler_angle_cache, copter.euler_angles(0)))  # 0 for use of state
         y_hat = np.asarray(Cd @ state_hat[1:10]).reshape(6,)
@@ -90,5 +90,5 @@ plt.title("rotation frequency")
 plt.legend(["n0", "n1", "n2", "n0_hat", "n1_hat", "n2_hat"], loc="upper right")
 
 # show sub plots
-plt.get_current_fig_manager().full_screen_toggle()  # toggle fullscreen mode, exit = Ctrl+F
+plt.get_current_fig_manager().full_screen_toggle()  # toggle full-screen mode, exit = Ctrl+F
 plt.show()
