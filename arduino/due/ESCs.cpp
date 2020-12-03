@@ -2,7 +2,7 @@
   Electronic Speed Controller Control using the Arduino Servo Library
 */
 
-#include <ESCs.h>
+#include "ESCs.h"
 
 
 int potValue;  // value from the analog pin

@@ -2,14 +2,15 @@
   Inertial Measurement Unit
 */
 
-#include <IMU.h>
+#include "IMU.h"
 
 void setup() {
-  sensors_event_t accel_event;
-  sensors_vec_t orientation;
+  
 }
 
 void loop() {
+  sensors_event_t accel_event;
+  sensors_vec_t orientation;
   /* Calculate pitch and roll from the raw accelerometer data */
   accel.getEvent(&accel_event);
   if (dof.accelGetOrientation(&accel_event, &orientation))

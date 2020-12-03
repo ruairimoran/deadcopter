@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import control as C
 
-copter = dead.copter.DeadCopter(mass=1.5, arm_length=0.225, K_v=1000)
+copter = dead.copter.DeadCopter(mass=1.5, arm_length=0.225, K_v=1000, voltage_max=17, voltage_min=15, prop_diameter=9)
 
 # Simulation parameters
 t_sampling = 0.01  # 10 ms

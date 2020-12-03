@@ -35,7 +35,7 @@ class DeadCopter:
         self.__thrust_coeff = 0.1                         # thrust coefficient
         self.__power_coeff = 0.04                         # power coefficient
         self.__prop_mass = 10 / 1000  # kg                # prop mass
-        self.__prop_diameter = 9 * 0.0254  # m            # prop diameter
+        self.__prop_diameter_in = 9                       # prop diameter in inches
         self.__prop_moi = 1  # kg.m^2                     # prop moment of inertia
 
         # noise
@@ -54,17 +54,18 @@ class DeadCopter:
 
     def __compute_parameters(self):
         # modelling
+        self.__prop_diameter_m = 9 * 0.0254                                   # prop diameter in meters
         self.__motor_moi = self.__rotor_mass * (self.__rotor_radius**2)
         self.__n_h = np.sqrt((self.__mass * self.__gravity_acc) /
                              (self.__num_motors * self.__thrust_coeff
-                              * self.__air_density * (self.__prop_diameter**4)))
+                              * self.__air_density * (self.__prop_diameter_m ** 4)))
         self.__k1 = (self.__K_v * (self.__voltage_max - self.__voltage_min)) / 60  # /60 for rps
         self.__k2 = 1 / self.__motor_time_constant
-        self.__k3_x = (2 * self.__n_h * self.__thrust_coeff * self.__air_density * (self.__prop_diameter**4) \
+        self.__k3_x = (2 * self.__n_h * self.__thrust_coeff * self.__air_density * (self.__prop_diameter_m ** 4) \
             * self.__num_motors * self.__arm_length) / ((2**0.5) * self.__moi_xx)
-        self.__k3_y = (2 * self.__n_h * self.__thrust_coeff * self.__air_density * (self.__prop_diameter**4) \
+        self.__k3_y = (2 * self.__n_h * self.__thrust_coeff * self.__air_density * (self.__prop_diameter_m ** 4) \
             * self.__num_motors * self.__arm_length) / ((2**0.5) * self.__moi_yy)
-        self.__k3_z = (2 * self.__n_h * self.__power_coeff * self.__air_density * (self.__prop_diameter**5) \
+        self.__k3_z = (2 * self.__n_h * self.__power_coeff * self.__air_density * (self.__prop_diameter_m ** 5) \
             * self.__num_motors) / (2 * np.pi * self.__moi_zz)
         self.__k4_xy = 0
         self.__k4_z = (2 * np.pi * self.__num_motors * (self.__prop_moi + self.__motor_moi)) / self.__moi_zz

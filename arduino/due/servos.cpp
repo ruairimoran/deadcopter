@@ -2,7 +2,7 @@
   Servo Motor Control using the Arduino Servo Library
 */
 
-#include <servos.h>
+#include "servos.h"
 
 
 void setup() {
