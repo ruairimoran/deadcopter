@@ -1,9 +1,3 @@
-// 2020-12-04 19:28:38.009950
-
-#ifndef receiver.h
-#define receiver.h
-
-#include <Arduino.h>
 #include <IBusBM.h>
 
 IBusBM ibusRc;
@@ -45,6 +39,3 @@ void loop() {
   debugSerial.println();
   delay(10);
 }
-
-
-#endif

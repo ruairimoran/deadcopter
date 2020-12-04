@@ -27,10 +27,6 @@ class Esc {
     Servo esc_back_left;
     Servo esc_back_right;
     bool arm;
-    double mapped_rotor_speed_front_left;
-    double mapped_rotor_speed_front_right;
-    double mapped_rotor_speed_back_left;
-    double mapped_rotor_speed_back_right;
 
     public:
     Esc();
@@ -59,16 +55,11 @@ void Esc::attach_esc_to_pwm_pin(void){
 }
 
 void Esc::write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right){
-    // scale to use with the servo library (value between 0 and 180)
-    mapped_rotor_speed_front_left = map(rotor_speed_front_left, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM, SERVO_LIBRARY_MIN_ANGLE, SERVO_LIBRARY_MAX_ANGLE);
-    mapped_rotor_speed_front_right = map(rotor_speed_front_right, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM, SERVO_LIBRARY_MIN_ANGLE, SERVO_LIBRARY_MAX_ANGLE);
-    mapped_rotor_speed_back_left = map(rotor_speed_back_left, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM, SERVO_LIBRARY_MIN_ANGLE, SERVO_LIBRARY_MAX_ANGLE);
-    mapped_rotor_speed_back_right = map(rotor_speed_back_right, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM, SERVO_LIBRARY_MIN_ANGLE, SERVO_LIBRARY_MAX_ANGLE);
     // send speed to ESCs
-    esc_front_left.write(mapped_rotor_speed_front_left);
-    esc_front_right.write(mapped_rotor_speed_front_right);
-    esc_back_left.write(mapped_rotor_speed_back_left);
-    esc_back_right.write(mapped_rotor_speed_back_right);
+    esc_front_left.writeMicroseconds(rotor_speed_front_left);
+    esc_front_right.writeMicroseconds(rotor_speed_front_right);
+    esc_back_left.writeMicroseconds(rotor_speed_back_left);
+    esc_back_right.writeMicroseconds(rotor_speed_back_right);
 }
 
 void Esc::disarm(void){
@@ -77,8 +68,7 @@ void Esc::disarm(void){
     rotor_speed_front_right = ZERO_ROTOR_SPEED;
     rotor_speed_back_left = ZERO_ROTOR_SPEED;
     rotor_speed_back_right = ZERO_ROTOR_SPEED;
-    Esc.map_to_servo_range(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right);
-    Esc.write_speed_to_esc(mapped_rotor_speed_front_left, mapped_rotor_speed_front_right, mapped_rotor_speed_back_left, mapped_rotor_speed_back_right);
+    Esc.write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right);
 }
 
 void Esc::arm(void){
@@ -87,8 +77,7 @@ void Esc::arm(void){
     rotor_speed_front_right = IDLE_ROTOR_SPEED;
     rotor_speed_back_left = IDLE_ROTOR_SPEED;
     rotor_speed_back_right = IDLE_ROTOR_SPEED;
-    Esc.map_to_servo_range(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right);
-    Esc.write_speed_to_esc(mapped_rotor_speed_front_left, mapped_rotor_speed_front_right, mapped_rotor_speed_back_left, mapped_rotor_speed_back_right);
+    Esc.write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right);
 }
 
 #endif

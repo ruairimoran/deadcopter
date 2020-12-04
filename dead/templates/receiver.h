@@ -1,4 +1,4 @@
-// 2020-12-04 19:28:38.009950
+// {{timestamp}}
 
 #ifndef receiver.h
 #define receiver.h

@@ -27,3 +27,9 @@ actuators_output = actuators_template.render(timestamp=timestamp,
 actuators_output_path = "../../arduino/due/actuators.h"
 with open(actuators_output_path, "w") as fh:
     fh.write(actuators_output)
+
+receiver_template = env.get_template('receiver.h')
+receiver_output = receiver_template.render(timestamp=timestamp)
+receiver_output_path = "../../arduino/due/receiver.h"
+with open(receiver_output_path, "w") as fh:
+    fh.write(receiver_output)
