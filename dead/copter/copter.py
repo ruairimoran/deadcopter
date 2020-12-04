@@ -39,7 +39,7 @@ class DeadCopter:
         self.__prop_moi = 1  # kg.m^2                     # prop moment of inertia
 
         # noise
-        self.__disturbance_covariance = np.diagflat([1e-6] * 9)
+        self.__disturbance_level = 1e-7
 
         # parse `kwargs` and set as attribute, provided the keyword corresponds
         # to one of the variables defined above
@@ -54,6 +54,7 @@ class DeadCopter:
 
     def __compute_parameters(self):
         # modelling
+        self.__disturbance_covariance = np.diagflat([self.__disturbance_level] * 9)
         self.__prop_diameter_m = 9 * 0.0254                                   # prop diameter in meters
         self.__motor_moi = self.__rotor_mass * (self.__rotor_radius**2)
         self.__n_h = np.sqrt((self.__mass * self.__gravity_acc) /
@@ -200,5 +201,5 @@ class DeadCopter:
                              [0, dt],
                              self.__state)
         self.__state = solution.y[:, -1]
-        self.__state[1:10] += np.random.multivariate_normal(np.zeros(9, ), self.__disturbance_covariance)
+        self.__state[1:10] += np.random.multivariate_normal(np.zeros(9,), self.__disturbance_covariance)
         self.__state[0:4] = self.normalise_quaternion(self.__state[0:4])
