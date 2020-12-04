@@ -63,8 +63,8 @@ void Esc::map_to_servo_range(rotor_speed_front_left, rotor_speed_front_right, ro
 
 void Esc::write_speed_to_esc(mapped_rotor_speed_front_left, mapped_rotor_speed_front_right, mapped_rotor_speed_back_left, mapped_rotor_speed_back_right){
     // send the signal to the ESC
-    ESC_FrontLeft.write(mapped_rotor_speed_front_left);
-    ESC_FrontRight.write(mapped_rotor_speed_front_right);
-    ESC_BackLeft.write(mapped_rotor_speed_back_left);
-    ESC_BackRight.write(mapped_rotor_speed_back_right);
+    esc_front_left.write(mapped_rotor_speed_front_left);
+    esc_front_right.write(mapped_rotor_speed_front_right);
+    esc_back_left.write(mapped_rotor_speed_back_left);
+    esc_back_right.write(mapped_rotor_speed_back_right);
 }

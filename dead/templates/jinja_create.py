@@ -18,6 +18,6 @@ actuators_output = actuators_template.render(timestamp=timestamp,
                                              esc_max_pwm_value=1850,
                                              servo_range_min=0,
                                              servo_range_max=180)
-actuators_output_path = "../due/actuators.h"
+actuators_output_path = "../../arduino/due/actuators.h"
 with open(actuators_output_path, "w") as fh:
     fh.write(actuators_output)
