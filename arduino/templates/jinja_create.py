@@ -8,10 +8,16 @@ env = jinja2.Environment(loader=file_loader, autoescape=True)
 
 actuators_template = env.get_template('actuators.h')
 actuators_output = actuators_template.render(timestamp=timestamp,
-                                             FrontRight_pin=2,
-                                             FrontLeft_pin=3,
-                                             BackLeft_pin=4,
-                                             BackRight_pin=5)
+                                             front_left_pin=2,
+                                             front_right_pin=3,
+                                             back_left_pin=4,
+                                             back_right_pin=5,
+                                             absolute_min_pwm_value=1000,
+                                             absolute_max_pwm_value=2000,
+                                             esc_min_pwm_value=1150,
+                                             esc_max_pwm_value=1850,
+                                             servo_range_min=0,
+                                             servo_range_max=180)
 actuators_output_path = "../due/actuators.h"
 with open(actuators_output_path, "w") as fh:
     fh.write(actuators_output)
