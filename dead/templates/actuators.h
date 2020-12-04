@@ -11,10 +11,11 @@
 #define BACK_LEFT_ESC_PIN {{back_left_pin}}
 #define BACK_RIGHT_ESC_PIN {{back_right_pin}}
 
+#define ZERO_ROTOR_SPEED {{zero_thrust_pwm}}
 #define ABSOLUTE_MIN_PWM {{absolute_min_pwm_value}}  // 1000
 #define ABSOLUTE_MAX_PWM {{absolute_max_pwm_value}}  // 2000
-#define ESC_MIN_PWM {{esc_min_pwm_value}}  // 1150 so props idle
-#define ESC_MAX_PWM {{esc_max_pwm_value}}  // 1850 so full throttle still allows room for LQR control
+//  need to include in receiver.h instead  //  #define ESC_MIN_PWM {{esc_min_pwm_value}}  // 1150 so props idle
+                                           // #define ESC_MAX_PWM {{esc_max_pwm_value}}  // 1850 so full throttle still allows room for LQR control
 #define SERVO_LIBRARY_MIN_ANGLE {{servo_range_min}}  // 0 degrees
 #define SERVO_LIBRARY_MAX_ANGLE {{servo_range_max}}  // 180 degrees
 
@@ -43,14 +44,17 @@ class Esc {
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 Esc::Esc(){
-
+    rotor_speed_front_left = ZERO_ROTOR_SPEED;
+    rotor_speed_front_right = ZERO_ROTOR_SPEED;
+    rotor_speed_back_left = ZERO_ROTOR_SPEED;
+    rotor_speed_back_right = ZERO_ROTOR_SPEED;
 }
 
 void Esc::attach_esc_to_pwm_pin(void){
-    esc_front_left.attach(FRONT_LEFT_ESC_PIN, ESC_MIN_PWM, ESC_MAX_PWM);  // (PWN pin, absolute min (1000), absolute max (2000))
-    esc_front_right.attach(FRONT_RIGHT_ESC_PIN, ESC_MIN_PWM, ESC_MAX_PWM);
-    esc_back_left.attach(BACK_LEFT_ESC_PIN, ESC_MIN_PWM, ESC_MAX_PWM);
-    esc_back_right.attach(BACK_RIGHT_ESC_PIN, ESC_MIN_PWM, ESC_MAX_PWM);
+    esc_front_left.attach(FRONT_LEFT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);  // (PWN pin, absolute min (1000), absolute max (2000))
+    esc_front_right.attach(FRONT_RIGHT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);
+    esc_back_left.attach(BACK_LEFT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);
+    esc_back_right.attach(BACK_RIGHT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);
 }
 
 void Esc::map_to_servo_range(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right){
