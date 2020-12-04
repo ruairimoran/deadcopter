@@ -1,5 +1,1 @@
-/* 
-  Deadcopter is learning.
-
-  Stay tuned.
-*/
+//  Deadcopter is learning. Stay tuned.

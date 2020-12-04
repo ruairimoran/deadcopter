@@ -6,6 +6,12 @@ timestamp = datetime.datetime.utcnow()
 file_loader = jinja2.FileSystemLoader('')
 env = jinja2.Environment(loader=file_loader, autoescape=True)
 
+due_template = env.get_template('due.ino')
+due_output = due_template.render(timestamp=timestamp)
+due_output_path = "../../arduino/due/due.ino"
+with open(due_output_path, "w") as fh:
+    fh.write(due_output)
+
 actuators_template = env.get_template('actuators.h')
 actuators_output = actuators_template.render(timestamp=timestamp,
                                              front_left_pin=2,

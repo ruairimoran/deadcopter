@@ -72,3 +72,5 @@ void Esc::write_speed_to_esc(mapped_rotor_speed_front_left, mapped_rotor_speed_f
     esc_back_left.write(mapped_rotor_speed_back_left);
     esc_back_right.write(mapped_rotor_speed_back_right);
 }
+
+#endif
