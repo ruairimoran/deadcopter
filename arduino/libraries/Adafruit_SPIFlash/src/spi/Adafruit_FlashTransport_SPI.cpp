@@ -28,7 +28,7 @@ Adafruit_FlashTransport_SPI::Adafruit_FlashTransport_SPI(
     uint8_t ss, SPIClass *spiinterface) {
   _cmd_read = SFLASH_CMD_READ;
   _addr_len = 3; // work with most device if not set
-  _ss = ss;
+  _ss = SS; 
   _spi = spiinterface;
   _clock_wr = _clock_rd = 4000000;
 }

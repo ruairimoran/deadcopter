@@ -14,9 +14,9 @@ class DeadCopter:
         self.__mass = 1.5  # kg                           # total mass of aircraft
         self.__arm_length = 0.225  # m                    # quad arm length
         self.__num_motors = 4  # motors                   # no. of motors
-        self.__moi_xx = 0.032  # kg.m^2                   # moment of inertia xx
-        self.__moi_yy = 0.032  # kg.m^2                   # moment of inertia yy
-        self.__moi_zz = 0.058  # kg.m^2                   # moment of inertia zz
+        self.__moi_xx = 0.0321  # kg.m^2                   # moment of inertia xx
+        self.__moi_yy = 0.0340  # kg.m^2                   # moment of inertia yy
+        self.__moi_zz = 0.0575  # kg.m^2                   # moment of inertia zz
         self.__moi = np.diagflat(
             [self.__moi_xx, self.__moi_yy, self.__moi_zz])    # inertia matrix
         self.__gravity_acc = 9.81  # m/s^2                # acceleration of gravity
@@ -25,21 +25,20 @@ class DeadCopter:
         # motors
         self.__K_v = 1000  # rpm/V                        # motor speed constant
         self.__motor_time_constant = 35 / 1000  # s       # motor time constant
-        self.__rotor_mass = 40 / 1000  # kg               # rotor mass
-        self.__rotor_radius = 18 / 1000  # m              # rotor radius
-        self.__motor_mass = 112 / 1000  # kg               # total mass of motor
+        self.__rotor_mass = 42 / 1000  # kg               # rotor mass
+        self.__rotor_radius = 19 / 1000  # m              # rotor radius
+        self.__motor_mass = 102 / 1000  # kg               # total mass of motor
         self.__voltage_max = 14  # V                      # max voltage to motor
         self.__voltage_min = 1.4  # V                      # min voltage to motor
 
         # props
         self.__thrust_coeff = 0.1                         # thrust coefficient
         self.__power_coeff = 0.04                         # power coefficient
-        self.__prop_mass = 10 / 1000  # kg                # prop mass
+        self.__prop_mass = 20 / 1000  # kg                # prop mass
         self.__prop_diameter_in = 9                       # prop diameter in inches
-        self.__prop_moi = 1  # kg.m^2                     # prop moment of inertia
 
         # noise
-        self.__disturbance_level = 1e-7
+        self.__disturbance_level = 1e-3
 
         # parse `kwargs` and set as attribute, provided the keyword corresponds
         # to one of the variables defined above
@@ -54,9 +53,10 @@ class DeadCopter:
 
     def __compute_parameters(self):
         # modelling
-        self.__disturbance_covariance = np.diagflat([self.__disturbance_level] * 9)
-        self.__prop_diameter_m = 9 * 0.0254                                   # prop diameter in meters
+        self.__disturbance_covariance = np.diagflat([self.__disturbance_level] * 3)
+        self.__prop_diameter_m = self.__prop_diameter_in * 0.0254                                   # prop diameter in meters
         self.__motor_moi = self.__rotor_mass * (self.__rotor_radius**2)
+        self.__prop_moi = (self.__prop_mass * self.__prop_diameter_m ** 2) / 12  # kg.m^2           # prop moment of inertia
         self.__n_h = np.sqrt((self.__mass * self.__gravity_acc) /
                              (self.__num_motors * self.__thrust_coeff
                               * self.__air_density * (self.__prop_diameter_m ** 4)))
@@ -201,5 +201,6 @@ class DeadCopter:
                              [0, dt],
                              self.__state)
         self.__state = solution.y[:, -1]
-        self.__state[1:10] += np.random.multivariate_normal(np.zeros(9,), self.__disturbance_covariance)
+        state_noise = np.random.multivariate_normal(np.zeros(3,), self.__disturbance_covariance)
+        self.__state[7:10] += state_noise
         self.__state[0:4] = self.normalise_quaternion(self.__state[0:4])
