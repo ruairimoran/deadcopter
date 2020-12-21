@@ -25,13 +25,13 @@ class Receiver {
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-Receiver::Receiver(){
+Receiver::Receiver() {
     pinMode(RX_PIN, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(RX_PIN), read_ppm, RISING);  // enabling interrupt on pin RX_PIN
     decode_ppm();
 }
 
-void read_ppm(void) {
+void Receiver::read_ppm(void) {
     static int i, j;  // counters
     // reads frames from RC receiver PPM pin
     // gives channel values from 1000 - 2000
@@ -48,7 +48,7 @@ void read_ppm(void) {
     }
 }
 
-void decode_ppm(void) {
+void Receiver::decode_ppm(void) {
     static int p, q, r;  // counters
     for (r=PULSE_GAPS_MEASURED-1; r>-1; r--) {
         if (decode_rx[r]>FRAME_CHANGE) {
