@@ -9,8 +9,9 @@ copter = dead.copter.copter.DeadCopter(disturbance_level=1e-3,
 sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=1/238, measurement_noise_multiplier=1e-4)
 
 # System design
-K, L = sim.system_design(copter)
-print(f"K = {K} \n"
+K_x, K_z, L = sim.system_design(copter)
+print(f"K_x = {K_x} \n"
+      f"K_z = {K_z} \n"
       f"L = {L}")
 
 euler_state_cache, euler_state_hat_cache, state_cache, state_hat_cache = sim.simulate(copter)

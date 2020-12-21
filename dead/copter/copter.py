@@ -99,11 +99,17 @@ class DeadCopter:
         if obsv_rank < n:
             raise Exception(f"System not observable. Obsv Matrix Rank ({obsv_rank}) < Measured States ({n})")
 
-    def LQR(self, a, b):
-        Q_lqr = np.diagflat([1850, 1850, 1100, 12, 12, 12, 1, 1, 1])  # a.shape[0]
+    def LQR(self, a, b, c, na, nc):
+        a_bar = np.vstack((np.hstack((a, np.zeros(shape=(na, nc)))),
+                           np.hstack((-c, np.identity(nc)))))
+        b_bar = np.vstack((b,
+                           np.zeros(shape=(nc, b.shape[1]))))
+        Q_lqr = np.diagflat([1850, 1850, 1100, 12, 12, 12, 1, 1, 1, 10, 10, 10, 10, 10, 10])  # a.shape[0] + c.shape[0]
         R_lqr = np.diagflat([0.3, 0.3, 0.3])  # b.shape[1]
-        solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(a, b, Q_lqr, R_lqr)
-        return -negative_gain_K_lqr
+        solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(a_bar, b_bar, Q_lqr, R_lqr)
+        K_x = -negative_gain_K_lqr[:, 0:na]
+        K_z = -negative_gain_K_lqr[:, na:na+nc]
+        return K_x, K_z
 
     def Kf(self, a, c):
         Q_Kf = np.diagflat([100, 100, 100, 1000, 1000, 1000, 1000, 1000, 1000])  # a.shape[0]
@@ -200,7 +206,7 @@ class DeadCopter:
         solution = solve_ivp(dynamics,
                              [0, dt],
                              self.__state)
-        self.__state = solution.y[:, -1]
+        self.__state = solution.y[:, -1] + [0.0001]  # add constant disturbance
         state_noise = np.random.multivariate_normal(np.zeros(3,), self.__disturbance_covariance)
         self.__state[7:10] += state_noise
         self.__state[0:4] = self.normalise_quaternion(self.__state[0:4])

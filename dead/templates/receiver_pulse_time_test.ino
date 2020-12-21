@@ -1,4 +1,5 @@
 // {{timestamp}}
+// make sure to save into different directory from "due.ino"
 
 #include <Arduino.h>
 

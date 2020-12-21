@@ -6,9 +6,9 @@ timestamp = datetime.datetime.utcnow()
 file_loader = jinja2.FileSystemLoader('')
 env = jinja2.Environment(loader=file_loader, autoescape=True)
 
-due_template = env.get_template('due.ino')
+due_template = env.get_template('dead/templates/due.ino')
 due_output = due_template.render(timestamp=timestamp)
-due_output_path = "../../arduino/due/due.ino"
+due_output_path = "arduino/due/due.ino"
 with open(due_output_path, "w") as fh:
     fh.write(due_output)
 
