@@ -8,7 +8,9 @@
 class Observer {
     private:
 
+
     public:
+    Observer();
 
 }
 

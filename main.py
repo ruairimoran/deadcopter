@@ -9,7 +9,7 @@ copter = dead.copter.copter.DeadCopter(disturbance_level=1e-3,
 sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=1/238, measurement_noise_multiplier=1e-4)
 
 # System design
-K_x, K_z, L = sim.system_design(copter)
+Ad, Bd, Cd, K_x, K_z, L, G = sim.system_design(copter)
 print(f"K_x = {K_x} \n"
       f"K_z = {K_z} \n"
       f"L = {L}")

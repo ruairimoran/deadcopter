@@ -18,6 +18,7 @@ class Receiver {
     static int read_rx[PULSE_GAPS_MEASURED], decode_rx[PULSE_GAPS_MEASURED], output_rx[NO_OF_CHANNELS+1];  // arrays to store values
 
     public:
+    Receiver();
     int rx_throttle, rx_rudder, rx_pitch, rx_roll, aux_channel_1, aux_channel_2, aux_channel_3, aux_channel_4;
     void read_ppm(void);
     void decode_ppm(void);

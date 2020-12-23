@@ -9,6 +9,7 @@ class Controller {
     private:
 
     public:
+    Controller();
 
 }
 

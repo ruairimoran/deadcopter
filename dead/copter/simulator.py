@@ -49,7 +49,7 @@ class Simulator:
                                                                np.vstack((np.zeros(shape=(self.__n_control, self.__n_observe)),
                                                                           np.eye(self.__n_observe))), rcond=0)
 
-        return self.__gain_K_x_lqr, self.__gain_K_z_lqr, self.__gain_L_Kf
+        return self.__Ad, self.__Bd, self.__Cd, self.__gain_K_x_lqr, self.__gain_K_z_lqr, self.__gain_L_Kf, self.__G
 
     def simulate(self, copter):
         copter.state = [0.9994, 0.0044, 0.0251, 0.0249, 0.1, 0.1, 0.1, 0, 0, 0]  # initial state offset from equilibrium
