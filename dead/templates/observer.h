@@ -10,6 +10,8 @@ class Observer {
 
 
     public:
+    float u[]
+    float y[7];
     Observer();
 
 }

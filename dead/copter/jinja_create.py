@@ -39,10 +39,10 @@ with open(due_output_path, "w") as fh:
     fh.write(due_output)
 
 #----------------------------------------------------------------------------------------------------------------------#
-# create "controller.h" from template
+# create "observer.h" from template
 
 #----------------------------------------------------------------------------------------------------------------------#
-# create "observer.h" from template
+# create "controller.h" from template
 
 #----------------------------------------------------------------------------------------------------------------------#
 # create "receiver.h" from template
