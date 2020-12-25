@@ -1,3 +1,2 @@
-from .copter import *
-from .simulator import *
-from .jinja_create import *
+import dead.copter.copter
+import dead.copter.simulator

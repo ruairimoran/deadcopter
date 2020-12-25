@@ -1,4 +1,4 @@
-// 2020-12-04 19:28:38.009950
+// 2020-12-25 18:45:00.655180
 
 #ifndef actuators.h
 #define actuators.h
@@ -42,19 +42,19 @@ class Esc {
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-Esc::Esc(){
+Esc::Esc() {
     Esc.attach_esc_to_pwm_pin();
     Esc.disarm();
 }
 
-void Esc::attach_esc_to_pwm_pin(void){
+void Esc::attach_esc_to_pwm_pin(void) {
     esc_front_left.attach(FRONT_LEFT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);  // (PWN pin, absolute min (1000), absolute max (2000))
     esc_front_right.attach(FRONT_RIGHT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);
     esc_back_left.attach(BACK_LEFT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);
     esc_back_right.attach(BACK_RIGHT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);
 }
 
-void Esc::write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right){
+void Esc::write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right) {
     // send speed to ESCs
     esc_front_left.writeMicroseconds(rotor_speed_front_left);
     esc_front_right.writeMicroseconds(rotor_speed_front_right);
@@ -62,7 +62,7 @@ void Esc::write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, ro
     esc_back_right.writeMicroseconds(rotor_speed_back_right);
 }
 
-void Esc::disarm(void){
+void Esc::disarm(void) {
     arm = 0;
     rotor_speed_front_left = ZERO_ROTOR_SPEED;
     rotor_speed_front_right = ZERO_ROTOR_SPEED;
@@ -71,7 +71,7 @@ void Esc::disarm(void){
     Esc.write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right);
 }
 
-void Esc::arm(void){
+void Esc::arm(void) {
     arm = 1;
     rotor_speed_front_left = IDLE_ROTOR_SPEED;
     rotor_speed_front_right = IDLE_ROTOR_SPEED;

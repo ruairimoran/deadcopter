@@ -16,7 +16,6 @@
 #define K_z {{lqr_K_z_gain}}  // LQR gain for integral action
 #define L {{kf_gain}}  // Kalman filter gain for minimising observation error
 #define G {{equilibrium_G}}  // for calculating new equilibrium state and control action
-#define PREDIVIDER 5  // for down scaling receiver angles
 
 class Fly {
     private:

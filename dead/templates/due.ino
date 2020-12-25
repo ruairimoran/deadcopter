@@ -2,8 +2,8 @@
 // {{timestamp}}
 
 #include <Arduino.h>
-#include "controller.h"
-#include "observer.h"
+#include "fly.h"
+#include "imu.h"
 #include "receiver.h"
 #include "actuators.h"
 
