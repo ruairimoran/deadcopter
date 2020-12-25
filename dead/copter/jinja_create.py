@@ -39,24 +39,27 @@ with open(due_output_path, "w") as fh:
     fh.write(due_output)
 
 #----------------------------------------------------------------------------------------------------------------------#
-# create "observer.h" from template
+# create "fly.h" from template
 
-#----------------------------------------------------------------------------------------------------------------------#
-# create "controller.h" from template
+fly_template = env.get_template('dead/templates/fly.h')
+fly_output = fly_template.render(timestamp=timestamp)
+fly_output_path = "arduino/due/fly.h"
+with open(fly_output_path, "w") as fh:
+    fh.write(fly_output)
 
 #----------------------------------------------------------------------------------------------------------------------#
 # create "receiver.h" from template
 
-receiver_template = env.get_template('receiver.h')
+receiver_template = env.get_template('dead/templates/receiver.h')
 receiver_output = receiver_template.render(timestamp=timestamp)
-receiver_output_path = "../../arduino/due/receiver.h"
+receiver_output_path = "arduino/due/receiver.h"
 with open(receiver_output_path, "w") as fh:
     fh.write(receiver_output)
 
 #----------------------------------------------------------------------------------------------------------------------#
 # create "actuators.h" from template
 
-actuators_template = env.get_template('actuators.h')
+actuators_template = env.get_template('dead/templates/actuators.h')
 actuators_output = actuators_template.render(timestamp=timestamp,
                                              front_left_pin=2,
                                              front_right_pin=3,
@@ -68,7 +71,7 @@ actuators_output = actuators_template.render(timestamp=timestamp,
                                              absolute_max_pwm_value=2000,
                                              servo_range_min=0,
                                              servo_range_max=180)
-actuators_output_path = "../../arduino/due/actuators.h"
+actuators_output_path = "arduino/due/actuators.h"
 with open(actuators_output_path, "w") as fh:
     fh.write(actuators_output)
 

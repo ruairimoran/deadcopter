@@ -15,6 +15,7 @@ class Imu {
     static int status;  // imu status
     static int pin13_indicator;  // for indicating IMU status
     static float q0, q1, q2, q3, ax, ay, az, gx, gy, gz, mx, my, mz, temp;  // imu raw data variables
+    static float imu_output[6];
 
     // Arithmetic variables
     float norm;
@@ -45,13 +46,12 @@ class Imu {
     float q2q2 = q2 * q2;
     float q2q3 = q2 * q3;
     float q3q3 = q3 * q3;
-    configure_imu();
+    void configure_imu(void);
 
     public:
-    float op_q0, op_q1, op_q2, op_q3, omega_x, omega_y, omega_z;  // output variables
     Imu();
-    calibrate_imu();
-    update_imu_data();
+    void calibrate_imu(void);
+    float update_imu_data(void);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -85,7 +85,7 @@ void Imu::calibrate_imu(void) {
     IMU.calibrateGyro();
 }
 
-void Imu::update_imu_data(void) {
+float Imu::update_imu_data(void) {
     pin13_indicator = status;
 
     // read IMU and store in buffer
@@ -161,18 +161,16 @@ void Imu::update_imu_data(void) {
     q2 = q2 * norm;
     q3 = q3 * norm;
 
-    // Quaternion
-    op_q0 = q0;
-    op_q1 = q1;
-    op_q2 = q2;
-    op_q3 = q3;
-
-    // Accel values
-    omega_x = ax;
-    omega_y = ay;
-    omega_z = az;
+    imu_output[0] = q1;
+    imu_output[1] = q2;
+    imu_output[2] = q3;
+    imu_output[3] = ax;
+    imu_output[4] = ay;
+    imu_output[5] = az;
 
     pin13_indicator = LOW;
+
+    return imu_output
 }
 
 #endif

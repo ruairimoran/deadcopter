@@ -4,6 +4,7 @@
 #define receiver.h
 
 #include <Arduino.h>
+#include <math.h>
 
 #define RX_PIN {{receiver_pin}}  // input pin for wire from receiver
 #define NO_OF_CHANNELS {{number_of_rx_channels}} // number of receiver channels
@@ -11,6 +12,9 @@
 #define FRAME_CHANGE {{frame_change_time}}  // must be less than time between last pulse in one frame and first pulse in next frame,
                            // but more than maximum time between any consecutive pulses in the same frame,
                            // measured using "receiver_pulse_test_time.ino" in microseconds (default: 5000)
+#define RECEIVER_MIN {{min_receiver_pwm}}  // minimum pwm input from receiver channel
+#define RECEIVER_MAX {{max_receiver_pwm}}  // maximum pwm input from receiver channel
+#define ABSOLUTE_MAX_COPTER_ANGLE {{max_allowed_tilt_degrees}}  // maximum angle the quadcopter can tilt from upright
 
 class Receiver {
     private:
@@ -60,9 +64,9 @@ void Receiver::decode_ppm(void) {
         output_rx[p] = decode_rx[p+q];  // output 8 channel values after first separation space
     }
     rx_throttle = output_rx[{{throttle_channel}}];
-    rx_rudder = output_rx[{{rudder_channel}}];
-    rx_pitch = output_rx[{{pitch_channel}}];
-    rx_roll = output_rx[{{roll_channel}}];
+    rx_rudder = map(output_rx[{{rudder_channel}}], RECEIVER_MIN, RECEIVER_MAX, -180, 180) * DEG_TO_RAD;
+    rx_pitch = map(output_rx[{{pitch_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE) * DEG_TO_RAD;
+    rx_roll = map(output_rx[{{roll_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE) * DEG_TO_RAD;
     aux_channel_1 = output_rx[5];
     aux_channel_2 = output_rx[6];
     aux_channel_3 = output_rx[7];
