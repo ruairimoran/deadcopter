@@ -32,7 +32,6 @@ class Receiver {
 
 Receiver::Receiver() {
     pinMode(RX_PIN, INPUT_PULLUP);
-    decode_ppm();
 }
 
 void Receiver::read_ppm(void) {
@@ -63,9 +62,9 @@ void Receiver::decode_ppm(void) {
         output_rx[p] = decode_rx[p+q];  // output 8 channel values after first separation space
     }
     rx_throttle = output_rx[{{throttle_channel}}];
-    rx_rudder = map(output_rx[{{rudder_channel}}], RECEIVER_MIN, RECEIVER_MAX, -180, 180) * DEG_TO_RAD;
-    rx_pitch = map(output_rx[{{pitch_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE) * DEG_TO_RAD;
-    rx_roll = map(output_rx[{{roll_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE) * DEG_TO_RAD;
+    rx_rudder = ceil(map(output_rx[{{rudder_channel}}], RECEIVER_MIN, RECEIVER_MAX, -180, 180));
+    rx_pitch = ceil(map(output_rx[{{pitch_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE));
+    rx_roll = ceil(map(output_rx[{{roll_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE));
     aux_channel_1 = output_rx[5];
     aux_channel_2 = output_rx[6];
     aux_channel_3 = output_rx[7];

@@ -28,7 +28,7 @@ Ad, Bd, Cd, K_x, K_z, L, G = sim.system_design(copter)
 
 # reformat python matrices output syntax to c++ array syntax
 def reformat_matrix_to_array(python_matrix):
-    py_array_format = np.array(python_matrix)                   # arrays with negative values have different
+    py_array_format = np.array(python_matrix)                    # arrays with negative values have different
     if str(py_array_format).count(" -") > 0:                     # output syntax to all positive arrays
         bracket_counter = str(py_array_format).count("]") - 2
         return str(py_array_format).replace("[", "{")\
@@ -36,7 +36,14 @@ def reformat_matrix_to_array(python_matrix):
             .replace("  ", ",")\
             .replace(" -", ", -")\
             .replace("}", "},", bracket_counter)
-    else:
+    elif str(py_array_format).count("[-") > 0:                    # catch any other negatives in array
+        bracket_counter = str(py_array_format).count("]") - 2
+        return str(py_array_format).replace("[", "{")\
+            .replace("]", "}")\
+            .replace("  ", ",")\
+            .replace(" -", ", -")\
+            .replace("}", "},", bracket_counter)
+    else:                                                         # for all positive arrays
         bracket_counter = str(py_array_format).count("]") - 2
         return str(py_array_format).replace("[", "{") \
             .replace("]", "}") \
@@ -103,11 +110,11 @@ receiver_output = receiver_template.render(timestamp=timestamp,
                                            frame_change_time=5000,
                                            min_receiver_pwm=1000,
                                            max_receiver_pwm=2000,
-                                           max_allowed_tilt_degrees=30,
-                                           throttle_channel=1,
-                                           rudder_channel=2,
-                                           pitch_channel=3,
-                                           roll_channel=4
+                                           max_allowed_tilt_degrees=40,
+                                           throttle_channel=3,
+                                           rudder_channel=4,
+                                           pitch_channel=2,
+                                           roll_channel=1
                                            )
 receiver_output_path = "../../arduino/due/receiver.h"
 with open(receiver_output_path, "w") as fh:

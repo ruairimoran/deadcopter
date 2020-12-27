@@ -1,4 +1,4 @@
-// 2020-12-27 01:44:21.953957
+// 2020-12-27 23:34:16.352123
 
 #ifndef receiver.h
 #define receiver.h
@@ -14,7 +14,7 @@
                            // measured using "receiver_pulse_test_time.ino" in microseconds (default: 5000)
 #define RECEIVER_MIN 1000  // minimum pwm input from receiver channel
 #define RECEIVER_MAX 2000  // maximum pwm input from receiver channel
-#define ABSOLUTE_MAX_COPTER_ANGLE 30  // maximum angle the quadcopter can tilt from upright
+#define ABSOLUTE_MAX_COPTER_ANGLE 40  // maximum angle the quadcopter can tilt from upright
 
 class Receiver {
     private:
@@ -32,7 +32,6 @@ class Receiver {
 
 Receiver::Receiver() {
     pinMode(RX_PIN, INPUT_PULLUP);
-    decode_ppm();
 }
 
 void Receiver::read_ppm(void) {
@@ -62,10 +61,10 @@ void Receiver::decode_ppm(void) {
     for (p=1; p<=NO_OF_CHANNELS; p++){
         output_rx[p] = decode_rx[p+q];  // output 8 channel values after first separation space
     }
-    rx_throttle = output_rx[1];
-    rx_rudder = map(output_rx[2], RECEIVER_MIN, RECEIVER_MAX, -180, 180) * DEG_TO_RAD;
-    rx_pitch = map(output_rx[3], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE) * DEG_TO_RAD;
-    rx_roll = map(output_rx[4], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE) * DEG_TO_RAD;
+    rx_throttle = output_rx[3];
+    rx_rudder = ceil(map(output_rx[4], RECEIVER_MIN, RECEIVER_MAX, -180, 180));
+    rx_pitch = ceil(map(output_rx[2], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE));
+    rx_roll = ceil(map(output_rx[1], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE));
     aux_channel_1 = output_rx[5];
     aux_channel_2 = output_rx[6];
     aux_channel_3 = output_rx[7];

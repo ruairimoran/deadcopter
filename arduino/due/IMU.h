@@ -1,4 +1,4 @@
-// 2020-12-27 01:44:21.953957
+// 2020-12-27 23:34:16.352123
 
 #ifndef imu.h
 #define imu.h
@@ -10,9 +10,10 @@
 
 class Imu {
     private:
-    MPU9250 imu_lib{Wire, 0x68};  // for using MPU library
+    MPU9250 imu_lib;  // for using MPU library
     Madgwick madgwick_lib;  // for using Madgwick library
-    int imu_status;  // imu status
+    int imu_status;  // imu status, starts with communication as False
+    int led_flash;  // LED indicating imu communication
     float ax, ay, az, gx, gy, gz, mx, my, mz, temp;  // imu raw data variables
     float q0, q1, q2, q3, omega_x, omega_y, omega_z;  // madgwick filtered variables
     void configure_imu(void);
@@ -20,17 +21,24 @@ class Imu {
 
     public:
     Imu();
+    void configure_imu_and_madgwick(void);
     void calibrate_imu(void);
     float update_imu_data(void);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
-Imu::Imu() {
-    configure_imu();
-    configure_madgwick_lib();
-    // calibrate_imu();
-    update_imu_data();
+Imu::Imu() : imu_lib{Wire,0x68}, imu_status{-1}, led_flash{0} {
+    pinMode(LED_BUILTIN, OUTPUT);  // setup LED output on pin 13 (default LED pin)
+    digitalWrite(LED_BUILTIN, LOW);
+}
+
+void Imu::configure_imu_and_madgwick(void) {
+    while(imu_status < 0) {
+        digitalWrite(LED_BUILTIN, LOW);
+        configure_madgwick_lib();
+        configure_imu();
+    }
 }
 
 void Imu::configure_madgwick_lib(void) {
@@ -60,6 +68,21 @@ void Imu::calibrate_imu(void) {
 }
 
 float Imu::update_imu_data(void) {
+    // led flashing to show update is being run
+    // high speed flashing means imu not being read
+    // normal speed flashing means imu is being read
+    led_flash += 1;
+    if(led_flash == 50) {
+        digitalWrite(LED_BUILTIN, HIGH);
+    }
+    if(led_flash == 100) {
+        digitalWrite(LED_BUILTIN, LOW);
+        led_flash = 0;
+    }
+    if(led_flash > 100) {
+        led_flash = 0;
+    }
+
     // read imu_lib and store in buffer
     imu_lib.readSensor();
 
@@ -81,7 +104,7 @@ float Imu::update_imu_data(void) {
     omega_y = ay;
     omega_z = az;
 
-    return q1, q2, q3, omega_x, omega_y, omega_z;
+    return q0, q1, q2, q3, omega_x, omega_y, omega_z;
 }
 
 #endif
