@@ -1,4 +1,4 @@
-// 2020-12-25 18:45:00.655180
+// 2020-12-27 01:44:21.953957
 
 #ifndef actuators.h
 #define actuators.h
@@ -26,25 +26,21 @@ class Esc {
     Servo esc_front_right;
     Servo esc_back_left;
     Servo esc_back_right;
-    bool arm;
+    bool arm_status;
 
     public:
     Esc();
-    int rotor_speed_front_left;
-    int rotor_speed_front_right;
-    int rotor_speed_back_left;
-    int rotor_speed_back_right;
     void attach_esc_to_pwm_pin(void);
-    void write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right);
+    void write_speed_to_esc(int rotor_speed_front_left, int rotor_speed_front_right, int rotor_speed_back_left, int rotor_speed_back_right);
     void disarm(void);
     void arm(void);
-}
+};
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 Esc::Esc() {
-    Esc.attach_esc_to_pwm_pin();
-    Esc.disarm();
+    attach_esc_to_pwm_pin();
+    disarm();
 }
 
 void Esc::attach_esc_to_pwm_pin(void) {
@@ -54,7 +50,7 @@ void Esc::attach_esc_to_pwm_pin(void) {
     esc_back_right.attach(BACK_RIGHT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);
 }
 
-void Esc::write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right) {
+void Esc::write_speed_to_esc(int rotor_speed_front_left, int rotor_speed_front_right, int rotor_speed_back_left, int rotor_speed_back_right) {
     // send speed to ESCs
     esc_front_left.writeMicroseconds(rotor_speed_front_left);
     esc_front_right.writeMicroseconds(rotor_speed_front_right);
@@ -63,21 +59,13 @@ void Esc::write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, ro
 }
 
 void Esc::disarm(void) {
-    arm = 0;
-    rotor_speed_front_left = ZERO_ROTOR_SPEED;
-    rotor_speed_front_right = ZERO_ROTOR_SPEED;
-    rotor_speed_back_left = ZERO_ROTOR_SPEED;
-    rotor_speed_back_right = ZERO_ROTOR_SPEED;
-    Esc.write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right);
+    arm_status = 0;
+    write_speed_to_esc(ZERO_ROTOR_SPEED, ZERO_ROTOR_SPEED, ZERO_ROTOR_SPEED, ZERO_ROTOR_SPEED);
 }
 
 void Esc::arm(void) {
-    arm = 1;
-    rotor_speed_front_left = IDLE_ROTOR_SPEED;
-    rotor_speed_front_right = IDLE_ROTOR_SPEED;
-    rotor_speed_back_left = IDLE_ROTOR_SPEED;
-    rotor_speed_back_right = IDLE_ROTOR_SPEED;
-    Esc.write_speed_to_esc(rotor_speed_front_left, rotor_speed_front_right, rotor_speed_back_left, rotor_speed_back_right);
+    arm_status = 1;
+    write_speed_to_esc(IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED);
 }
 
 #endif

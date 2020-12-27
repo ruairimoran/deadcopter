@@ -1,11 +1,12 @@
 import jinja2
 import dead
 import datetime
+import numpy as np
 
 # get current date and time
 timestamp = datetime.datetime.utcnow()
 
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------#
 # run simulator to get constant matrices
 
 # copter intialisation
@@ -18,18 +19,47 @@ copter = dead.copter.copter.DeadCopter(disturbance_level=1e-3,
                                        prop_diameter_in=11)
 
 # simulator intialisation
-sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=1/238, measurement_noise_multiplier=1e-4)
+sampling_time = 1 / 238
+sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=sampling_time, measurement_noise_multiplier=1e-4)
 
 # system design
 Ad, Bd, Cd, K_x, K_z, L, G = sim.system_design(copter)
 
-#----------------------------------------------------------------------------------------------------------------------#
+
+# reformat python matrices output syntax to c++ array syntax
+def reformat_matrix_to_array(python_matrix):
+    py_array_format = np.array(python_matrix)                   # arrays with negative values have different
+    if str(py_array_format).count(" -") > 0:                     # output syntax to all positive arrays
+        bracket_counter = str(py_array_format).count("]") - 2
+        return str(py_array_format).replace("[", "{")\
+            .replace("]", "}")\
+            .replace("  ", ",")\
+            .replace(" -", ", -")\
+            .replace("}", "},", bracket_counter)
+    else:
+        bracket_counter = str(py_array_format).count("]") - 2
+        return str(py_array_format).replace("[", "{") \
+            .replace("]", "}") \
+            .replace(" ", ",") \
+            .replace("}", "},", bracket_counter) \
+            .replace(",{", "{")
+
+
+_Ad = reformat_matrix_to_array(Ad)
+_Bd = reformat_matrix_to_array(Bd)
+_Cd = reformat_matrix_to_array(Cd)
+_K_x = reformat_matrix_to_array(K_x)
+_K_z = reformat_matrix_to_array(K_z)
+_L = reformat_matrix_to_array(L)
+_G = reformat_matrix_to_array(G)
+
+# ----------------------------------------------------------------------------------------------------------------------#
 # setup jinja environment
 
 file_loader = jinja2.FileSystemLoader('../templates')
 env = jinja2.Environment(loader=file_loader, autoescape=True)
 
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------#
 # create "due.ino" from template
 
 due_template = env.get_template('due.ino')
@@ -38,23 +68,23 @@ due_output_path = "../../arduino/due/due.ino"
 with open(due_output_path, "w") as fh:
     fh.write(due_output)
 
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------#
 # create "fly.h" from template
 
 fly_template = env.get_template('fly.h')
 fly_output = fly_template.render(timestamp=timestamp,
-                                 discrete_A=Ad,
-                                 discrete_B=Bd,
-                                 discrete_C=Cd,
-                                 lqr_K_x_gain=K_x,
-                                 lqr_K_z_gain=K_z,
-                                 kf_gain=L,
-                                 equilibrium_G=G)
+                                 discrete_A=_Ad,
+                                 discrete_B=_Bd,
+                                 discrete_C=_Cd,
+                                 lqr_K_x_gain=_K_x,
+                                 lqr_K_z_gain=_K_z,
+                                 kf_gain=_L,
+                                 equilibrium_G=_G)
 fly_output_path = "../../arduino/due/fly.h"
 with open(fly_output_path, "w") as fh:
     fh.write(fly_output)
 
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------#
 # create "imu.h" from template
 
 imu_template = env.get_template('imu.h')
@@ -63,7 +93,7 @@ imu_output_path = "../../arduino/due/imu.h"
 with open(imu_output_path, "w") as fh:
     fh.write(imu_output)
 
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------#
 # create "receiver.h" from template
 
 receiver_template = env.get_template('receiver.h')
@@ -83,7 +113,7 @@ receiver_output_path = "../../arduino/due/receiver.h"
 with open(receiver_output_path, "w") as fh:
     fh.write(receiver_output)
 
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------#
 # create "actuators.h" from template
 
 actuators_template = env.get_template('actuators.h')
@@ -102,4 +132,4 @@ actuators_output_path = "../../arduino/due/actuators.h"
 with open(actuators_output_path, "w") as fh:
     fh.write(actuators_output)
 
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------#

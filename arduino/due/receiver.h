@@ -1,4 +1,4 @@
-// 2020-12-25 18:45:00.655180
+// 2020-12-27 01:44:21.953957
 
 #ifndef receiver.h
 #define receiver.h
@@ -18,21 +18,20 @@
 
 class Receiver {
     private:
-    static unsigned long int current_time, previous_time, time_difference;  // for calculating pulse separation time
-    static int read_rx[PULSE_GAPS_MEASURED], decode_rx[PULSE_GAPS_MEASURED], output_rx[NO_OF_CHANNELS+1];  // arrays to store values
+    unsigned long int current_time, previous_time, time_difference;  // for calculating pulse separation time
+    int read_rx[PULSE_GAPS_MEASURED], decode_rx[PULSE_GAPS_MEASURED], output_rx[NO_OF_CHANNELS+1];  // arrays to store values
 
     public:
     Receiver();
     int rx_throttle, rx_rudder, rx_pitch, rx_roll, aux_channel_1, aux_channel_2, aux_channel_3, aux_channel_4;
     void read_ppm(void);
     void decode_ppm(void);
-}
+};
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 Receiver::Receiver() {
     pinMode(RX_PIN, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(RX_PIN), read_ppm, RISING);  // enabling interrupt on pin RX_PIN
     decode_ppm();
 }
 
