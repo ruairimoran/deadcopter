@@ -1,4 +1,4 @@
-// 2020-12-27 23:34:16.352123
+// 2020-12-29 01:12:53.164209
 
 #ifndef imu.h
 #define imu.h
@@ -15,7 +15,6 @@ class Imu {
     int imu_status;  // imu status, starts with communication as False
     int led_flash;  // LED indicating imu communication
     float ax, ay, az, gx, gy, gz, mx, my, mz, temp;  // imu raw data variables
-    float q0, q1, q2, q3, omega_x, omega_y, omega_z;  // madgwick filtered variables
     void configure_imu(void);
     void configure_madgwick_lib(void);
 
@@ -23,7 +22,7 @@ class Imu {
     Imu();
     void configure_imu_and_madgwick(void);
     void calibrate_imu(void);
-    float update_imu_data(void);
+    float update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2, float &imu_y_3, float &imu_y_4, float &imu_y_5);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -42,8 +41,9 @@ void Imu::configure_imu_and_madgwick(void) {
 }
 
 void Imu::configure_madgwick_lib(void) {
-    madgwick_lib.begin(5000.0f);  // 5x imu gyro/accel/temp rate
-    madgwick_lib.set_beta(0.1f);  // set madgwick filter gain
+    float freq = 100.0f;  // for 10ms rate
+    madgwick_lib.begin(freq);
+    madgwick_lib.set_beta(1.0f);  // set madgwick filter gain
 }
 
 void Imu::configure_imu(void) {
@@ -67,7 +67,7 @@ void Imu::calibrate_imu(void) {
     imu_lib.calibrateGyro();
 }
 
-float Imu::update_imu_data(void) {
+float Imu::update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2, float &imu_y_3, float &imu_y_4, float &imu_y_5) {
     // led flashing to show update is being run
     // high speed flashing means imu not being read
     // normal speed flashing means imu is being read
@@ -79,7 +79,7 @@ float Imu::update_imu_data(void) {
         digitalWrite(LED_BUILTIN, LOW);
         led_flash = 0;
     }
-    if(led_flash > 100) {
+    if(led_flash > 100 || led_flash < 0) {
         led_flash = 0;
     }
 
@@ -98,13 +98,10 @@ float Imu::update_imu_data(void) {
     mz = imu_lib.getMagZ_uT();
     temp = imu_lib.getTemperature_C();
 
-    madgwick_lib.update(gx, gy, gz, ax, ay, az, mx, my, mz);
-    q0, q1, q2, q3 = madgwick_lib.get_quaternion();
-    omega_x = ax;
-    omega_y = ay;
-    omega_z = az;
-
-    return q0, q1, q2, q3, omega_x, omega_y, omega_z;
+    madgwick_lib.update(gx, gy, gz, ax, ay, az, mx, my, mz, imu_y_negative1, imu_y_0, imu_y_1, imu_y_2);
+    imu_y_3 = ax;
+    imu_y_4 = ay;
+    imu_y_5 = az;
 }
 
 #endif

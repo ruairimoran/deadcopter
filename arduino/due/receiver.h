@@ -1,4 +1,4 @@
-// 2020-12-27 23:34:16.352123
+// 2020-12-29 01:12:53.164209
 
 #ifndef receiver.h
 #define receiver.h
@@ -23,9 +23,9 @@ class Receiver {
 
     public:
     Receiver();
-    int rx_throttle, rx_rudder, rx_pitch, rx_roll, aux_channel_1, aux_channel_2, aux_channel_3, aux_channel_4;
+    int aux_channel_1, aux_channel_2, aux_channel_3, aux_channel_4;
     void read_ppm(void);
-    void decode_ppm(void);
+    void decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -39,7 +39,7 @@ void Receiver::read_ppm(void) {
     // reads frames from RC receiver PPM pin
     // gives channel values from 1000 - 2000
     current_time = micros();  // store current time value when pin value rising
-    time_difference = current_time - previous_time;  // calculate time between two risng edges
+    time_difference = current_time - previous_time;  // calculate time between two rising edges
     previous_time = current_time;
     read_rx[i] = time_difference;  // store value in array
     i += 1;
@@ -51,7 +51,7 @@ void Receiver::read_ppm(void) {
     }
 }
 
-void Receiver::decode_ppm(void) {
+void Receiver::decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw) {
     static int p, q, r;  // counters
     for (r=PULSE_GAPS_MEASURED-1; r>-1; r--) {
         if (decode_rx[r]>FRAME_CHANGE) {
@@ -62,9 +62,9 @@ void Receiver::decode_ppm(void) {
         output_rx[p] = decode_rx[p+q];  // output 8 channel values after first separation space
     }
     rx_throttle = output_rx[3];
-    rx_rudder = ceil(map(output_rx[4], RECEIVER_MIN, RECEIVER_MAX, -180, 180));
-    rx_pitch = ceil(map(output_rx[2], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE));
-    rx_roll = ceil(map(output_rx[1], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE));
+    rx_roll = map(output_rx[1], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
+    rx_pitch = map(output_rx[2], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
+    rx_yaw = map(output_rx[4], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
     aux_channel_1 = output_rx[5];
     aux_channel_2 = output_rx[6];
     aux_channel_3 = output_rx[7];

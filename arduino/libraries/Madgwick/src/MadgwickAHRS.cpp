@@ -45,7 +45,7 @@ Madgwick::Madgwick() {
 	anglesComputed = 0;
 }
 
-void Madgwick::update(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz) {
+void Madgwick::update(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float &_q0, float &_q1, float &_q2, float &_q3) {
 	float recipNorm;
 	float s0, s1, s2, s3;
 	float qDot1, qDot2, qDot3, qDot4;
@@ -54,7 +54,7 @@ void Madgwick::update(float gx, float gy, float gz, float ax, float ay, float az
 
 	// Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
 	if((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f)) {
-		updateIMU(gx, gy, gz, ax, ay, az);
+		updateIMU(gx, gy, gz, ax, ay, az, _q0, _q1, _q2, _q3);
 		return;
 	}
 
@@ -145,12 +145,17 @@ void Madgwick::update(float gx, float gy, float gz, float ax, float ay, float az
 	q2 *= recipNorm;
 	q3 *= recipNorm;
 	anglesComputed = 0;
+
+	_q0 = q0;
+	_q1 = q1;
+	_q2 = q2;
+	_q3 = q3;
 }
 
 //-------------------------------------------------------------------------------------------
 // IMU algorithm update
 
-void Madgwick::updateIMU(float gx, float gy, float gz, float ax, float ay, float az) {
+void Madgwick::updateIMU(float gx, float gy, float gz, float ax, float ay, float az, float &_q0, float &_q1, float &_q2, float &_q3) {
 	float recipNorm;
 	float s0, s1, s2, s3;
 	float qDot1, qDot2, qDot3, qDot4;
@@ -222,6 +227,11 @@ void Madgwick::updateIMU(float gx, float gy, float gz, float ax, float ay, float
 	q2 *= recipNorm;
 	q3 *= recipNorm;
 	anglesComputed = 0;
+
+	_q0 = q0;
+	_q1 = q1;
+	_q2 = q2;
+	_q3 = q3;
 }
 
 //-------------------------------------------------------------------------------------------
@@ -249,10 +259,4 @@ void Madgwick::computeAngles()
 	anglesComputed = 1;
 }
 
-//-------------------------------------------------------------------------------------------
-
-float Madgwick::get_quaternion()
-{
-	return q0, q1, q2, q3;
-}
 

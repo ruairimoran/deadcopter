@@ -41,10 +41,9 @@ void configure_imu() {
 }
 
 void configure_filter() {
-  float frequency = 1000;
+  float frequency = 5000;
   filter.begin(frequency);
-  // MadgwickSetBeta(0.15f);
-  // IMU.setFrequency(frequency);
+  filter.set_beta(1.0f);
   // initialize variables to pace updates to correct rate
   microsPerReading = 1000000 / frequency;
   microsPrevious = micros();
@@ -65,7 +64,7 @@ void setup() {
   start_imu_communication();
   configure_imu();
   configure_filter();
-  // calibrate_imu();
+  calibrate_imu();
 }
 
 void loop() {
@@ -96,7 +95,7 @@ void loop() {
     temp = IMU.getTemperature_C();
 
     // update the filter, which computes orientation
-    filter.updateIMU(gx, gy, gz, ax, ay, az);
+    q0, q1, q2, q3 = filter.update(gx, gy, gz, ax, ay, az, mx, my, mz);
 
     // print the heading, pitch and roll
     roll = filter.getRoll();
