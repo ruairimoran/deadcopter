@@ -14,6 +14,8 @@
                            // measured using "receiver_pulse_test_time.ino" in microseconds (default: 5000)
 #define RECEIVER_MIN {{min_receiver_pwm}}  // minimum pwm input from receiver channel
 #define RECEIVER_MAX {{max_receiver_pwm}}  // maximum pwm input from receiver channel
+#define THROTTLE_MIN {{min_throttle_pwm}}  // minimum throttle input
+#define THROTTLE_MAX {{max_throttle_pwm}}  // maximum throttle input
 #define ABSOLUTE_MAX_COPTER_ANGLE {{max_allowed_tilt_degrees}}  // maximum angle the quadcopter can tilt from upright
 
 class Receiver {
@@ -61,7 +63,7 @@ void Receiver::decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx
     for (p=1; p<=NO_OF_CHANNELS; p++){
         output_rx[p] = decode_rx[p+q];  // output 8 channel values after first separation space
     }
-    rx_throttle = output_rx[{{throttle_channel}}];
+    rx_throttle = map(output_rx[{{throttle_channel}}], RECEIVER_MIN, RECEIVER_MAX, THROTTLE_MIN, THROTTLE_MAX);
     rx_roll = map(output_rx[{{roll_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
     rx_pitch = map(output_rx[{{pitch_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
     rx_yaw = map(output_rx[{{rudder_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);

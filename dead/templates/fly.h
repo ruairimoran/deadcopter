@@ -24,14 +24,15 @@ class Fly {
     BLA::Matrix<3,6> Mat_K_z = K_z;
     float L[9][6] = {{kf_gain}};  // Kalman filter gain for minimising observation error
     BLA::Matrix<9,6> Mat_L = L;
-    float G[12][6] = {{equilibrium_G}};  // for calculating new equilibrium state and control action
+    float G[12][3] = {{equilibrium_G}};  // for calculating new equilibrium state and control action
+    BLA::Matrix<12,3> Mat_G = G;
 
     {% raw %}
 
-    BLA::Matrix<12,6> Mat_G = G;
     float u[3][1] = {{0}, {0}, {0}};  // control action on quadcopter (u_x, u_y, u_z)
     BLA::Matrix<3,1> Mat_u = u;
     BLA::Matrix<6,1> Mat_r;  // control input from receiver (q1, q2, q3, 0, 0, 0)
+    BLA::Matrix<3,1> Mat_r_short;  // for solving equilibrium faster
     float z[6][1] = {{0}, {0}, {0}, {0}, {0}, {0}};  // storing integral values
     BLA::Matrix<6,1> Mat_z = z;
     BLA::Matrix<6,1> Mat_y;  // IMU values
@@ -45,12 +46,15 @@ class Fly {
 
     {% endraw %}
 
-    // for solving matrix equations
-    // BLA::Matrix<9,1> Ad__x_hat;
-    // BLA::Matrix<9,1> Bd__u;
-    // BLA::Matrix<9,1> L__y_diff;
-    // BLA::Matrix<3,1> K_x__x_diff;
-    // BLA::Matrix<3,1> K_z__z;
+    // for formatting into output to motor
+    BLA::Matrix<1,1> Mat_throttle;
+    BLA::Matrix<4,1> Mat_throttle_and_u;
+    BLA::Matrix<4,1> Mat_output_to_motor;
+    float motor_proportions[4][4] = {{ '{{' }}1.0, 1.0, {{ '-' }}1.0, {{ '-' }}1.0},
+                                     {1.0, {{ '-' }}1.0, {{ '-' }}1.0, 1.0},
+                                     {1.0, 1.0, 1.0, 1.0},
+                                     {1.0, {{ '-' }}1.0, 1.0, {{ '-' }}1.0{{ '}}' }};  // motor_speeds = motor_proportions * throttle_and_control
+    BLA::Matrix<4,4> Mat_motor_proportions = motor_proportions;
 
     // for solving quaternion differences
     float invSqrt(float input);
@@ -68,7 +72,7 @@ class Fly {
     public:
     Fly();
     void set_matrix_r_and_y(float roll, float pitch, float yaw, float Mat_y_negative1, float Mat_y_0, float Mat_y_1, float Mat_y_2, float Mat_y_3, float Mat_y_4, float Mat_y_5);
-    void observe_and_control(int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
+    void observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
         float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0, float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5);
 
 };
@@ -94,7 +98,7 @@ float Fly::invSqrt(float input) {
 
 float Fly::solve_q0(float q1, float q2, float q3) {
     // find q0 for unit quaternion
-    return sqrtf(1 - powf(q1,2) - powf(q2,2) - powf(q3,2));
+    return sqrt(1 - pow(q1,2) - pow(q2,2) - pow(q3,2));
 }
 
 float Fly::quaternion_difference(float w1, float x1, float y1, float z1,
@@ -143,33 +147,16 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw, flo
     Mat_y(5, 0) = Mat_y_5;
 }
 
-void Fly::observe_and_control(int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
+void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
         float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0, float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
-    // find observed y_hat
-    Multiply(Mat_Cd, Mat_x_hat, Mat_y_hat);
-
-    // find y difference (y_hat - y)
-    q0_y_hat = solve_q0(Mat_y_hat(0,0), Mat_y_hat(1,0), Mat_y_hat(2,0));
-    quaternion_difference(q0_y_hat, Mat_y_hat(0,0), Mat_y_hat(1,0), Mat_y_hat(2,0),
-                          q0_y, Mat_y(0,0), Mat_y(1,0), Mat_y(2,0),
-                          q0_y_diff, Mat_y_diff(0,0), Mat_y_diff(1,0), Mat_y_diff(2,0));
-    for(int i=3; i<6; i++) {
-        Mat_y_diff(i,0) = Mat_y_hat(i,0) - Mat_y(i,0);
-    }
-
-    // find observed x_hat
-    // Multiply(Mat_Ad, Mat_x_hat, Ad__x_hat);
-    // Multiply(Mat_Bd, Mat_u, Bd__u);
-    // Multiply(Mat_L, Mat_y_diff, L__y_diff);
-    Mat_x_hat = Mat_Ad*Mat_x_hat + Mat_Bd*Mat_u + Mat_L*Mat_y_diff;
-
     // integral action
-    for(int i=0; i<6; i++) {
-        Mat_z(i,0) = Mat_z(i,0) + Mat_r(i,0) - Mat_y(i,0);
-    }
+    Mat_z += Mat_r - Mat_y;
 
     // find x and u equilibrium values
-    Multiply(Mat_G, Mat_r, Mat_xu_e);
+    Mat_r_short(0,0) = Mat_r(0,0);
+    Mat_r_short(1,0) = Mat_r(1,0);
+    Mat_r_short(2,0) = Mat_r(2,0);
+    Multiply(Mat_G, Mat_r_short, Mat_xu_e);
 
     // find x difference (x_hat - x_e)
     q0_x_hat = solve_q0(Mat_x_hat(0,0), Mat_x_hat(1,0), Mat_x_hat(2,0));
@@ -187,10 +174,35 @@ void Fly::observe_and_control(int &fly_front_left, int &fly_front_right, int &fl
     Mat_u_e(2,0) = Mat_xu_e(11,0);
 
     // find control action matrix, u
-    // Multiply(Mat_K_x, Mat_x_diff, K_x__x_diff);
-    // Multiply(Mat_K_z, Mat_z, K_z__z);
     Mat_u = Mat_u_e + Mat_K_x*Mat_x_diff + Mat_K_z*Mat_z;
 
+    // format into control output for motors
+    Mat_throttle(0,0) = fly_throttle;
+    Mat_throttle_and_u = Mat_throttle && Mat_u;  // form matrix of throttle on top of u
+    Multiply(Mat_motor_proportions, Mat_throttle_and_u, Mat_output_to_motor);
+    fly_front_left = ceil(Mat_output_to_motor(0,0));
+    fly_front_right = ceil(Mat_output_to_motor(1,0));
+    fly_back_left = ceil(Mat_output_to_motor(2,0));
+    fly_back_right = ceil(Mat_output_to_motor(3,0));
+
+    // find observed y_hat
+    Multiply(Mat_Cd, Mat_x_hat, Mat_y_hat);
+
+    // find y difference (y_hat - y)
+    q0_y_hat = solve_q0(Mat_y_hat(0,0), Mat_y_hat(1,0), Mat_y_hat(2,0));
+    quaternion_difference(q0_y_hat, Mat_y_hat(0,0), Mat_y_hat(1,0), Mat_y_hat(2,0),
+                          q0_y, Mat_y(0,0), Mat_y(1,0), Mat_y(2,0),
+                          q0_y_diff, Mat_y_diff(0,0), Mat_y_diff(1,0), Mat_y_diff(2,0));
+    for(int i=3; i<6; i++) {
+        Mat_y_diff(i,0) = Mat_y_hat(i,0) - Mat_y(i,0);
+    }
+
+    // find observed x_hat
+    Mat_x_hat = Mat_Ad*Mat_x_hat + Mat_Bd*Mat_u + Mat_L*Mat_y_diff;
+
+
+
+    // testing outputs for serial print // to be deleted
     f_u0 = Mat_u(0,0);
     f_u1 = Mat_u(1,0);
     f_u2 = Mat_u(2,0);

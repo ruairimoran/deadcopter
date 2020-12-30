@@ -19,11 +19,12 @@ copter = dead.copter.copter.DeadCopter(disturbance_level=1e-3,
                                        prop_diameter_in=11)
 
 # simulator intialisation
-sampling_time = 1 / 238
+sampling_time = 1 / 238  # /238
 sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=sampling_time, measurement_noise_multiplier=1e-4)
 
 # system design
-Ad, Bd, Cd, K_x, K_z, L, G = sim.system_design(copter)
+Ad, Bd, Cd, K_x, K_z, L, wide_G = sim.system_design(copter)  # wide_G has 6 columns
+G = np.delete(wide_G, [3, 4, 5], 1)  # delete last 3 columns of wide_G as last three elements of r are zeros
 
 
 # reformat python matrices output syntax to c++ array syntax
@@ -108,8 +109,10 @@ receiver_output = receiver_template.render(timestamp=timestamp,
                                            receiver_pin=7,
                                            number_of_rx_channels=8,
                                            frame_change_time=5000,
-                                           min_receiver_pwm=1000,
-                                           max_receiver_pwm=2000,
+                                           min_receiver_pwm=1070,
+                                           max_receiver_pwm=1930,
+                                           min_throttle_pwm=1150,
+                                           max_throttle_pwm=1850,
                                            max_allowed_tilt_degrees=40,
                                            throttle_channel=3,
                                            rudder_channel=4,

@@ -1,4 +1,4 @@
-// 2020-12-29 01:12:53.164209
+// 2020-12-30 00:07:59.103692
 
 #ifndef actuators.h
 #define actuators.h
@@ -15,8 +15,6 @@
 #define IDLE_ROTOR_SPEED 1150  // 1150
 #define ABSOLUTE_MIN_PWM 1000  // 1000
 #define ABSOLUTE_MAX_PWM 2000  // 2000
-//  need to include in receiver.h instead  //  #define ESC_MIN_PWM   // 1150 so props idle
-                                           // #define ESC_MAX_PWM   // 1850 so full throttle still allows room for LQR control
 #define SERVO_LIBRARY_MIN_ANGLE 0  // 0 degrees
 #define SERVO_LIBRARY_MAX_ANGLE 180  // 180 degrees
 
@@ -34,6 +32,7 @@ class Esc {
     void write_speed_to_esc(int rotor_speed_front_left, int rotor_speed_front_right, int rotor_speed_back_left, int rotor_speed_back_right);
     void disarm(void);
     void arm(void);
+    void get_arm_status(bool &esc_arm_status);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -65,6 +64,10 @@ void Esc::disarm(void) {
 void Esc::arm(void) {
     arm_status = 1;
     write_speed_to_esc(IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED);
+}
+
+void Esc::get_arm_status(bool &esc_arm_status) {
+    esc_arm_status = arm_status;
 }
 
 #endif

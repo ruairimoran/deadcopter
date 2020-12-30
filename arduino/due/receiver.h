@@ -1,4 +1,4 @@
-// 2020-12-29 01:12:53.164209
+// 2020-12-30 00:07:59.103692
 
 #ifndef receiver.h
 #define receiver.h
@@ -12,8 +12,10 @@
 #define FRAME_CHANGE 5000  // must be less than time between last pulse in one frame and first pulse in next frame,
                            // but more than maximum time between any consecutive pulses in the same frame,
                            // measured using "receiver_pulse_test_time.ino" in microseconds (default: 5000)
-#define RECEIVER_MIN 1000  // minimum pwm input from receiver channel
-#define RECEIVER_MAX 2000  // maximum pwm input from receiver channel
+#define RECEIVER_MIN 1070  // minimum pwm input from receiver channel
+#define RECEIVER_MAX 1930  // maximum pwm input from receiver channel
+#define THROTTLE_MIN 1150  // minimum throttle input
+#define THROTTLE_MAX 1850  // maximum throttle input
 #define ABSOLUTE_MAX_COPTER_ANGLE 40  // maximum angle the quadcopter can tilt from upright
 
 class Receiver {
@@ -61,7 +63,7 @@ void Receiver::decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx
     for (p=1; p<=NO_OF_CHANNELS; p++){
         output_rx[p] = decode_rx[p+q];  // output 8 channel values after first separation space
     }
-    rx_throttle = output_rx[3];
+    rx_throttle = map(output_rx[3], RECEIVER_MIN, RECEIVER_MAX, THROTTLE_MIN, THROTTLE_MAX);
     rx_roll = map(output_rx[1], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
     rx_pitch = map(output_rx[2], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
     rx_yaw = map(output_rx[4], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
