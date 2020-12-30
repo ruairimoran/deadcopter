@@ -86,7 +86,7 @@ float Imu::update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_
     // read imu_lib and store in buffer
     imu_lib.readSensor();
 
-    // get data from buffer in m.s^-2 and degs.s^-1 and micro Tesla
+    // get data from buffer in m.s^-2 and rads.s^-1 and micro Tesla
     ax = imu_lib.getAccelX_mss();
     ay = imu_lib.getAccelY_mss();
     az = imu_lib.getAccelZ_mss();
@@ -98,10 +98,11 @@ float Imu::update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_
     mz = imu_lib.getMagZ_uT();
     temp = imu_lib.getTemperature_C();
 
+    // edited MadgwickAHRS.cpp to stop it converting g from deg to rad
     madgwick_lib.update(gx, gy, gz, ax, ay, az, mx, my, mz, imu_y_negative1, imu_y_0, imu_y_1, imu_y_2);
-    imu_y_3 = ax;
-    imu_y_4 = ay;
-    imu_y_5 = az;
+    imu_y_3 = gx;
+    imu_y_4 = gy;
+    imu_y_5 = gz;
 }
 
 #endif
