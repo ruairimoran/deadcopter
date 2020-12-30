@@ -1,1 +1,2 @@
-from .copter import *
+import dead.copter.copter
+import dead.copter.simulator
