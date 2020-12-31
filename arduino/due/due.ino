@@ -1,5 +1,5 @@
 //  Deadcopter is learning. Stay tuned.
-// 2020-12-31 00:26:53.607416
+// 2020-12-31 16:35:11.184727
 
 // DueTimer Timers 0,2,3,4,5 unavailable due to use of Servo library
 #include <Arduino.h>

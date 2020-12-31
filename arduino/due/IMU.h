@@ -1,4 +1,4 @@
-// 2020-12-31 00:26:53.607416
+// 2020-12-31 16:35:11.184727
 
 #ifndef imu.h
 #define imu.h
@@ -8,7 +8,7 @@
 #include <MadgwickAHRS.h>
 #include <math.h>
 
-#define SAMPLING_FREQUENCY 238
+#define SAMPLING_FREQUENCY 125
 
 class Imu {
     private:
@@ -60,9 +60,10 @@ void Imu::configure_imu(void) {
     // setting DLPF bandwidth to 92 Hz
     imu_lib.setDlpfBandwidth(MPU9250::DLPF_BANDWIDTH_92HZ);
     // Data Output Rate = 1000 / (1 + SRD)
-    // setting SRD to 4 for a 200Hz output rate
+    // output rate should be > double Dlpf
+    // setting SRD to 7 for a 125Hz output rate
     // mag fixed at 100Hz for SRD<=9, 8Hz for SRD>9
-    imu_lib.setSrd(4); // gyro/accel/temp = 200Hz, mag = 100Hz
+    imu_lib.setSrd(7); // gyro/accel/temp = 200Hz, mag = 100Hz
 }
 
 void Imu::calibrate_imu(void) {
