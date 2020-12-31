@@ -29,10 +29,10 @@ class Esc {
     public:
     Esc();
     void attach_esc_to_pwm_pin(void);
-    void write_speed_to_esc(int rotor_speed_front_left, int rotor_speed_front_right, int rotor_speed_back_left, int rotor_speed_back_right);
+    void write_speed_to_esc(volatile int rotor_speed_front_left, volatile int rotor_speed_front_right, volatile int rotor_speed_back_left, volatile int rotor_speed_back_right);
     void disarm(void);
     void arm(void);
-    void get_arm_status(bool &esc_arm_status);
+    void get_arm_status(volatile bool &esc_arm_status);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -48,7 +48,7 @@ void Esc::attach_esc_to_pwm_pin(void) {
     esc_back_right.attach(BACK_RIGHT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);
 }
 
-void Esc::write_speed_to_esc(int rotor_speed_front_left, int rotor_speed_front_right, int rotor_speed_back_left, int rotor_speed_back_right) {
+void Esc::write_speed_to_esc(volatile int rotor_speed_front_left, volatile int rotor_speed_front_right, volatile int rotor_speed_back_left, volatile int rotor_speed_back_right) {
     // send speed to ESCs
     esc_front_left.writeMicroseconds(rotor_speed_front_left);
     esc_front_right.writeMicroseconds(rotor_speed_front_right);
@@ -66,7 +66,7 @@ void Esc::arm(void) {
     write_speed_to_esc(IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED);
 }
 
-void Esc::get_arm_status(bool &esc_arm_status) {
+void Esc::get_arm_status(volatile bool &esc_arm_status) {
     esc_arm_status = arm_status;
 }
 

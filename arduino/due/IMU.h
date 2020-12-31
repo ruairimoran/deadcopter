@@ -1,4 +1,4 @@
-// 2020-12-30 17:16:06.010674
+// 2020-12-31 00:26:53.607416
 
 #ifndef imu.h
 #define imu.h
@@ -7,6 +7,8 @@
 #include <MPU9250.h>
 #include <MadgwickAHRS.h>
 #include <math.h>
+
+#define SAMPLING_FREQUENCY 238
 
 class Imu {
     private:
@@ -22,7 +24,8 @@ class Imu {
     Imu();
     void configure_imu_and_madgwick(void);
     void calibrate_imu(void);
-    float update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2, float &imu_y_3, float &imu_y_4, float &imu_y_5);
+    float update_imu_data(volatile float &imu_y_negative1, volatile float &imu_y_0, volatile float &imu_y_1, volatile float &imu_y_2,
+                          volatile float &imu_y_3, volatile float &imu_y_4, volatile float &imu_y_5);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -34,31 +37,32 @@ Imu::Imu() : imu_lib{Wire,0x68}, imu_status{-1}, led_flash{0} {
 
 void Imu::configure_imu_and_madgwick(void) {
     while(imu_status < 0) {
-        digitalWrite(LED_BUILTIN, LOW);
+        digitalWrite(LED_BUILTIN, HIGH);
         configure_madgwick_lib();
         configure_imu();
     }
 }
 
 void Imu::configure_madgwick_lib(void) {
-    float freq = 100.0f;  // for 10ms rate
-    madgwick_lib.begin(freq);
+    madgwick_lib.begin(SAMPLING_FREQUENCY);
     madgwick_lib.set_beta(1.0f);  // set madgwick filter gain
 }
 
 void Imu::configure_imu(void) {
+    // disable imu creating it's own interrupt when data is ready
+    imu_lib.disableDataReadyInterrupt();
     // start communication with imu
     imu_status = imu_lib.begin();
     // setting the accelerometer full scale range to +/-8G
     imu_lib.setAccelRange(MPU9250::ACCEL_RANGE_8G); // GOTO imu_lib readme for possible ranges
     // setting the gyroscope full scale range to +/-500 deg/s
     imu_lib.setGyroRange(MPU9250::GYRO_RANGE_500DPS); // GOTO imu_lib readme for possible ranges
-    // setting DLPF bandwidth to 184 Hz
-    imu_lib.setDlpfBandwidth(MPU9250::DLPF_BANDWIDTH_184HZ);
+    // setting DLPF bandwidth to 92 Hz
+    imu_lib.setDlpfBandwidth(MPU9250::DLPF_BANDWIDTH_92HZ);
     // Data Output Rate = 1000 / (1 + SRD)
-    // setting SRD to 0 for a 1000Hz update rate
+    // setting SRD to 4 for a 200Hz output rate
     // mag fixed at 100Hz for SRD<=9, 8Hz for SRD>9
-    imu_lib.setSrd(0); // gyro/accel/temp = 1000Hz, mag = 100Hz
+    imu_lib.setSrd(4); // gyro/accel/temp = 200Hz, mag = 100Hz
 }
 
 void Imu::calibrate_imu(void) {
@@ -67,7 +71,8 @@ void Imu::calibrate_imu(void) {
     imu_lib.calibrateGyro();
 }
 
-float Imu::update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2, float &imu_y_3, float &imu_y_4, float &imu_y_5) {
+float Imu::update_imu_data(volatile float &imu_y_negative1, volatile float &imu_y_0, volatile float &imu_y_1, volatile float &imu_y_2,
+                           volatile float &imu_y_3, volatile float &imu_y_4, volatile float &imu_y_5) {
     // led flashing to show update is being run
     // high speed flashing means imu not being read
     // normal speed flashing means imu is being read

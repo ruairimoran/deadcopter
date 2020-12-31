@@ -1,4 +1,4 @@
-// 2020-12-30 17:16:06.010674
+// 2020-12-31 00:26:53.607416
 
 #ifndef receiver.h
 #define receiver.h
@@ -27,7 +27,7 @@ class Receiver {
     Receiver();
     int aux_channel_1, aux_channel_2, aux_channel_3, aux_channel_4;
     void read_ppm(void);
-    void decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw);
+    void decode_ppm(volatile int &rx_throttle, volatile int &rx_roll, volatile int &rx_pitch, volatile int &rx_yaw);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -53,7 +53,7 @@ void Receiver::read_ppm(void) {
     }
 }
 
-void Receiver::decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw) {
+void Receiver::decode_ppm(volatile int &rx_throttle, volatile int &rx_roll, volatile int &rx_pitch, volatile int &rx_yaw) {
     static int p, q, r;  // counters
     for (r=PULSE_GAPS_MEASURED-1; r>-1; r--) {
         if (decode_rx[r]>FRAME_CHANGE) {
