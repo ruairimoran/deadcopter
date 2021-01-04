@@ -96,7 +96,8 @@ with open(fly_output_path, "w") as fh:
 
 imu_template = env.get_template('imu.h')
 imu_output = imu_template.render(timestamp=timestamp,
-                                 sample_freq=sampling_frequency)
+                                 sample_freq=sampling_frequency,
+                                 imu_int_pin=6)
 imu_output_path = "../../arduino/due/imu.h"
 with open(imu_output_path, "w") as fh:
     fh.write(imu_output)

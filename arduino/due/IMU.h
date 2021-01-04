@@ -1,4 +1,4 @@
-// 2020-12-31 16:35:11.184727
+// 2021-01-04 22:16:18.143122
 
 #ifndef imu.h
 #define imu.h
@@ -9,6 +9,7 @@
 #include <math.h>
 
 #define SAMPLING_FREQUENCY 125
+#define IMU_INTERRUPT_PIN 6  // interrupt pin to signal when imu data ready
 
 class Imu {
     private:
@@ -49,10 +50,10 @@ void Imu::configure_madgwick_lib(void) {
 }
 
 void Imu::configure_imu(void) {
-    // disable imu creating it's own interrupt when data is ready
-    imu_lib.disableDataReadyInterrupt();
     // start communication with imu
     imu_status = imu_lib.begin();
+    // disable imu creating it's own interrupt when data is ready
+    imu_lib.enableDataReadyInterrupt();
     // setting the accelerometer full scale range to +/-8G
     imu_lib.setAccelRange(MPU9250::ACCEL_RANGE_8G); // GOTO imu_lib readme for possible ranges
     // setting the gyroscope full scale range to +/-500 deg/s
@@ -63,7 +64,7 @@ void Imu::configure_imu(void) {
     // output rate should be > double Dlpf
     // setting SRD to 7 for a 125Hz output rate
     // mag fixed at 100Hz for SRD<=9, 8Hz for SRD>9
-    imu_lib.setSrd(7); // gyro/accel/temp = 200Hz, mag = 100Hz
+    imu_lib.setSrd(7); // gyro/accel/temp = 125Hz, mag = 100Hz
 }
 
 void Imu::calibrate_imu(void) {
