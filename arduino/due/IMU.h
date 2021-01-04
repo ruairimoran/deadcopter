@@ -1,4 +1,4 @@
-// 2021-01-04 22:16:18.143122
+// 2021-01-04 23:57:56.167062
 
 #ifndef imu.h
 #define imu.h
@@ -25,8 +25,8 @@ class Imu {
     Imu();
     void configure_imu_and_madgwick(void);
     void calibrate_imu(void);
-    float update_imu_data(volatile float &imu_y_negative1, volatile float &imu_y_0, volatile float &imu_y_1, volatile float &imu_y_2,
-                          volatile float &imu_y_3, volatile float &imu_y_4, volatile float &imu_y_5);
+    float update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2,
+                          float &imu_y_3, float &imu_y_4, float &imu_y_5);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -38,9 +38,9 @@ Imu::Imu() : imu_lib{Wire,0x68}, imu_status{-1}, led_flash{0} {
 
 void Imu::configure_imu_and_madgwick(void) {
     while(imu_status < 0) {
-        digitalWrite(LED_BUILTIN, HIGH);
         configure_madgwick_lib();
         configure_imu();
+        digitalWrite(LED_BUILTIN, HIGH);
     }
 }
 
@@ -73,20 +73,20 @@ void Imu::calibrate_imu(void) {
     imu_lib.calibrateGyro();
 }
 
-float Imu::update_imu_data(volatile float &imu_y_negative1, volatile float &imu_y_0, volatile float &imu_y_1, volatile float &imu_y_2,
-                           volatile float &imu_y_3, volatile float &imu_y_4, volatile float &imu_y_5) {
+float Imu::update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2,
+                           float &imu_y_3, float &imu_y_4, float &imu_y_5) {
     // led flashing to show update is being run
     // high speed flashing means imu not being read
     // normal speed flashing means imu is being read
     led_flash += 1;
-    if(led_flash == 50) {
+    if(led_flash == 125) {
         digitalWrite(LED_BUILTIN, HIGH);
     }
-    if(led_flash == 100) {
+    if(led_flash == 250) {
         digitalWrite(LED_BUILTIN, LOW);
         led_flash = 0;
     }
-    if(led_flash > 100 || led_flash < 0) {
+    if(led_flash > 250 || led_flash < 0) {
         led_flash = 0;
     }
 
@@ -103,7 +103,7 @@ float Imu::update_imu_data(volatile float &imu_y_negative1, volatile float &imu_
     mx = imu_lib.getMagX_uT();
     my = imu_lib.getMagY_uT();
     mz = imu_lib.getMagZ_uT();
-    temp = imu_lib.getTemperature_C();
+    // temp = imu_lib.getTemperature_C();
 
     // edited MadgwickAHRS.cpp to stop it converting g from deg to rad
     madgwick_lib.update(gx, gy, gz, ax, ay, az, mx, my, mz, imu_y_negative1, imu_y_0, imu_y_1, imu_y_2);

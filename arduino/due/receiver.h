@@ -1,4 +1,4 @@
-// 2021-01-04 22:16:18.143122
+// 2021-01-04 23:57:56.167062
 
 #ifndef receiver.h
 #define receiver.h
@@ -27,7 +27,7 @@ class Receiver {
     Receiver();
     int aux_channel_1, aux_channel_2, aux_channel_3, aux_channel_4;
     void read_ppm(void);
-    void decode_ppm(volatile int &rx_throttle, volatile int &rx_roll, volatile int &rx_pitch, volatile int &rx_yaw);
+    void decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -46,14 +46,28 @@ void Receiver::read_ppm(void) {
     read_rx[i] = time_difference;  // store value in array
     i += 1;
     if(i==PULSE_GAPS_MEASURED) {
-        for(j=0; j<PULSE_GAPS_MEASURED; j++) {
-            decode_rx[j] = read_rx[j];  // copy all values from temporary array into analysis array after PULSE_GAPS_MEASURED readings
-        }
+        decode_rx[0] = read_rx[0];  // copy all values from temporary array into analysis array after PULSE_GAPS_MEASURED readings
+        decode_rx[1] = read_rx[1];
+        decode_rx[2] = read_rx[2];
+        decode_rx[3] = read_rx[3];
+        decode_rx[4] = read_rx[4];
+        decode_rx[5] = read_rx[5];
+        decode_rx[6] = read_rx[6];
+        decode_rx[7] = read_rx[7];
+        decode_rx[8] = read_rx[8];
+        decode_rx[9] = read_rx[9];
+        decode_rx[10] = read_rx[10];
+        decode_rx[11] = read_rx[11];
+        decode_rx[12] = read_rx[12];
+        decode_rx[13] = read_rx[13];
+        decode_rx[14] = read_rx[14];
+        decode_rx[15] = read_rx[15];
+        decode_rx[16] = read_rx[16];
         i=0;
     }
 }
 
-void Receiver::decode_ppm(volatile int &rx_throttle, volatile int &rx_roll, volatile int &rx_pitch, volatile int &rx_yaw) {
+void Receiver::decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw) {
     static int p, q, r;  // counters
     for (r=PULSE_GAPS_MEASURED-1; r>-1; r--) {
         if (decode_rx[r]>FRAME_CHANGE) {
