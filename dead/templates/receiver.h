@@ -45,24 +45,10 @@ void Receiver::read_ppm(void) {
     previous_time = current_time;
     read_rx[i] = time_difference;  // store value in array
     i += 1;
-    if(i==PULSE_GAPS_MEASURED) {
-        decode_rx[0] = read_rx[0];  // copy all values from temporary array into analysis array after PULSE_GAPS_MEASURED readings
-        decode_rx[1] = read_rx[1];
-        decode_rx[2] = read_rx[2];
-        decode_rx[3] = read_rx[3];
-        decode_rx[4] = read_rx[4];
-        decode_rx[5] = read_rx[5];
-        decode_rx[6] = read_rx[6];
-        decode_rx[7] = read_rx[7];
-        decode_rx[8] = read_rx[8];
-        decode_rx[9] = read_rx[9];
-        decode_rx[10] = read_rx[10];
-        decode_rx[11] = read_rx[11];
-        decode_rx[12] = read_rx[12];
-        decode_rx[13] = read_rx[13];
-        decode_rx[14] = read_rx[14];
-        decode_rx[15] = read_rx[15];
-        decode_rx[16] = read_rx[16];
+    if(i==PULSE_GAPS_MEASURED) {  // copy all values from temporary array into analysis array after PULSE_GAPS_MEASURED readings
+        {% for pulse_gap in range(2*number_of_rx_channels+1) -%}
+        decode_rx[{{pulse_gap}}] = read_rx[{{pulse_gap}}];
+        {% endfor -%}
         i=0;
     }
 }

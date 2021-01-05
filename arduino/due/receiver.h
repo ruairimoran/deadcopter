@@ -1,4 +1,4 @@
-// 2021-01-04 23:57:56.167062
+// 2021-01-05 21:43:24.493286
 
 #ifndef receiver.h
 #define receiver.h
@@ -45,8 +45,8 @@ void Receiver::read_ppm(void) {
     previous_time = current_time;
     read_rx[i] = time_difference;  // store value in array
     i += 1;
-    if(i==PULSE_GAPS_MEASURED) {
-        decode_rx[0] = read_rx[0];  // copy all values from temporary array into analysis array after PULSE_GAPS_MEASURED readings
+    if(i==PULSE_GAPS_MEASURED) {  // copy all values from temporary array into analysis array after PULSE_GAPS_MEASURED readings
+        decode_rx[0] = read_rx[0];
         decode_rx[1] = read_rx[1];
         decode_rx[2] = read_rx[2];
         decode_rx[3] = read_rx[3];
