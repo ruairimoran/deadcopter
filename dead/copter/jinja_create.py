@@ -10,17 +10,16 @@ timestamp = datetime.datetime.utcnow()
 # run simulator to get constant matrices
 
 # copter intialisation
-copter = dead.copter.copter.DeadCopter(disturbance_level=1e-3,
-                                       mass=1.85,
-                                       arm_length=0.27,
-                                       K_v=700,
-                                       voltage_max=11.1,
-                                       voltage_min=1.11,
-                                       prop_diameter_in=11)
+copter = dead.copter.copter.DeadCopter(mass=2,
+                                       arm_length=0.225,
+                                       K_v=1000,
+                                       voltage_max=18,
+                                       voltage_min=15,
+                                       prop_diameter_in=10)
 
 # simulator intialisation
-sampling_time = 1 / 238  # /238
-sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=sampling_time, measurement_noise_multiplier=1e-4)
+sampling_frequency = 125  # 238
+sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=1/sampling_frequency)
 
 # system design
 Ad, Bd, Cd, K_x, K_z, L, wide_G = sim.system_design(copter)  # wide_G has 6 columns
@@ -96,7 +95,9 @@ with open(fly_output_path, "w") as fh:
 # create "imu.h" from template
 
 imu_template = env.get_template('imu.h')
-imu_output = imu_template.render(timestamp=timestamp)
+imu_output = imu_template.render(timestamp=timestamp,
+                                 sample_freq=sampling_frequency,
+                                 imu_int_pin=6)
 imu_output_path = "../../arduino/due/imu.h"
 with open(imu_output_path, "w") as fh:
     fh.write(imu_output)

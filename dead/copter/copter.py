@@ -11,7 +11,7 @@ class DeadCopter:
         self.__state = np.array([1] + [0] * 9)
 
         # general
-        self.__mass = 1.5  # kg                           # total mass of aircraft
+        self.__mass = 2  # kg                           # total mass of aircraft
         self.__arm_length = 0.225  # m                    # quad arm length
         self.__num_motors = 4  # motors                   # no. of motors
         self.__moi_xx = 0.0321  # kg.m^2                   # moment of inertia xx
@@ -27,9 +27,9 @@ class DeadCopter:
         self.__motor_time_constant = 35 / 1000  # s       # motor time constant
         self.__rotor_mass = 42 / 1000  # kg               # rotor mass
         self.__rotor_radius = 19 / 1000  # m              # rotor radius
-        self.__motor_mass = 102 / 1000  # kg               # total mass of motor
-        self.__voltage_max = 14  # V                      # max voltage to motor
-        self.__voltage_min = 1.4  # V                      # min voltage to motor
+        self.__motor_mass = 112 / 1000  # kg               # total mass of motor
+        self.__voltage_max = 18  # V                      # max voltage to motor
+        self.__voltage_min = 15  # V                      # min voltage to motor
 
         # props
         self.__thrust_coeff = 0.1                         # thrust coefficient
@@ -104,8 +104,8 @@ class DeadCopter:
                            np.hstack((-c, np.identity(nc)))))
         b_bar = np.vstack((b,
                            np.zeros(shape=(nc, b.shape[1]))))
-        Q_lqr = np.diagflat([1850, 1850, 1100, 12, 12, 12, 1, 1, 1, 10, 10, 10, 10, 10, 10])  # a.shape[0] + c.shape[0]
-        R_lqr = np.diagflat([0.3, 0.3, 0.3])  # b.shape[1]
+        Q_lqr = np.diagflat([2000, 2000, 2000, 10, 10, 10, 1, 1, 1, 2, 2, 2, 2, 2, 2])  # a.shape[0] + c.shape[0] # for 238 Hz = [1850, 1850, 1100, 12, 12, 12, 1, 1, 1, 20, 20, 20, 20, 20, 20]
+        R_lqr = np.diagflat([0.9, 1.6, 1.6])  # b.shape[1] # for 238 Hz = [0.3, 0.3, 0.3]
         solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(a_bar, b_bar, Q_lqr, R_lqr)
         K_x = -negative_gain_K_lqr[:, 0:na]
         K_z = -negative_gain_K_lqr[:, na:na+nc]

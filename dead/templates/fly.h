@@ -71,9 +71,12 @@ class Fly {
 
     public:
     Fly();
-    void set_matrix_r_and_y(float roll, float pitch, float yaw, float Mat_y_negative1, float Mat_y_0, float Mat_y_1, float Mat_y_2, float Mat_y_3, float Mat_y_4, float Mat_y_5);
+    void set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
+                            float Mat_y_negative1, float Mat_y_0, float Mat_y_1, float Mat_y_2,
+                            float Mat_y_3, float Mat_y_4, float Mat_y_5);
     void observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
-        float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0, float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5);
+                             float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
+                             float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5);
 
 };
 
@@ -115,7 +118,9 @@ float Fly::quaternion_difference(float w1, float x1, float y1, float z1,
     z3 = w1*z2 + x1*y2 - y1*x2 + z1*w2;
 }
 
-void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw, float Mat_y_negative1, float Mat_y_0, float Mat_y_1, float Mat_y_2, float Mat_y_3, float Mat_y_4, float Mat_y_5) {
+void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
+                             float Mat_y_negative1, float Mat_y_0, float Mat_y_1, float Mat_y_2,
+                             float Mat_y_3, float Mat_y_4, float Mat_y_5) {
     // get input quaternion from receiver euler angles
     float cy = cos(fly_yaw * 0.5f);
     float sy = sin(fly_yaw * 0.5f);
@@ -148,7 +153,8 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw, flo
 }
 
 void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
-        float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0, float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
+                              float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
+                              float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
     // integral action
     Mat_z += Mat_r - Mat_y;
 
