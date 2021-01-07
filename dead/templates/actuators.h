@@ -24,7 +24,7 @@ class Esc {
     Servo esc_front_right;
     Servo esc_back_left;
     Servo esc_back_right;
-    bool arm_status;
+    bool arm_status = false;
 
     public:
     Esc();

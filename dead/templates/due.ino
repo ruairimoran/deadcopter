@@ -9,16 +9,30 @@
 #include "fly.h"
 #include "actuators.h"
 
-Receiver due_receiver;
-Imu due_imu;
-Fly due_controller;
-Esc due_motors;
+Receiver due_receiver;  // create receiver object from receiver.h
+Imu due_imu;  // create imu object from imu.h
+Fly due_controller;  // create controller/observer object from fly.h
+Esc due_motors;  // create receiver object from receiver.h
 
-bool flag_refresh_receiver, flag_flight_control;  // flags for interrupt service routines
-bool due_arm_status, due_arm_switch_status;  // for motors armed status and Tx switch status
-int due_throttle, due_roll, due_pitch, due_yaw;  // for receiver control inputs
-float due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5;  // for filtered imu readings
-int due_front_left, due_front_right, due_back_left, due_back_right;  // for motor speed pwm in milliseconds
+bool flag_refresh_receiver = false;  // for interrupt to tell loop to update receiver values
+bool flag_flight_control = false;  // for interrupt to tell loop to run flight control
+bool due_arm_status = false;  // motors armed status
+bool due_arm_switch_status = false;  // Tx arm switch status
+int due_throttle = 0;  // receiver throttle value
+int due_roll = 0;  // receiver roll value
+int due_pitch = 0;  // receiver pitch value
+int due_yaw = 0;  // receiver yaw value
+float due_y_negative1 = 0;  // imu q0
+float due_y_0 = 0;  // imu q1
+float due_y_1 = 0;  // imu q2
+float due_y_2 = 0;  // imu q3
+float due_y_3 = 0;  // imu angular acceleration x
+float due_y_4 = 0;  // imu angular acceleration y
+float due_y_5 = 0;  // imu angular acceleration z
+int due_front_left = 0;  // front left motor pwm
+int due_front_right = 0;  // front right motor pwm
+int due_back_left = 0;  // back left motor pwm
+int due_back_right = 0;  // back right motor pwm
 
 // for readings and timings // to be deleted
 float _u0, _u1, _u2;
@@ -30,19 +44,20 @@ void get_read_ppm() {
 }
 
 void refresh_receiver() {
+    // set interrupt flag
     flag_refresh_receiver = true;
 }
 
 void flight_control() {
+    // get imu values
+    due_imu.update_imu_data(due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
+    // set interrupt flag
     flag_flight_control = true;
 }
 
 void setup() {
-    due_arm_switch_status = false;  // motors cannot arm
-    flag_refresh_receiver = false;  // for timed update of stored receiver values
-    flag_flight_control = false;  // for timed flight control updating
     attachInterrupt(digitalPinToInterrupt(RX_PIN), get_read_ppm, RISING);  // enable receiver ppm interrupt
-    Timer1.attachInterrupt(refresh_receiver).setPeriod(40000).start();  // refresh receiver values every 40ms - each ppm frame is 20ms
+    Timer6.attachInterrupt(refresh_receiver).setPeriod(40000).start();  // refresh receiver values every 40ms - each ppm frame is 20ms
     attachInterrupt(digitalPinToInterrupt(IMU_INTERRUPT_PIN), flight_control, RISING);  // enable data ready interrupt from imu
     due_imu.configure_imu_and_madgwick();  // start communication with imu with madgwick filter
     due_motors.attach_esc_to_pwm_pin();
@@ -58,9 +73,11 @@ void setup() {
 void loop() {
 //----------------------------------------------------------------------------------------------------------------------
     // update receiver values
+
     if(flag_refresh_receiver == true) {
         // get receiver control
         due_receiver.decode_ppm(due_throttle, due_roll, due_pitch, due_yaw);
+        // reset interrupt flag
         flag_refresh_receiver = false;
     }
 
@@ -82,11 +99,9 @@ void loop() {
     }
 
 //----------------------------------------------------------------------------------------------------------------------
-    // flight control
+    // flight control to update motor pwm
 
     if(flag_flight_control == true) {
-        // get imu values
-        due_imu.update_imu_data(due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
         // setup y and r matrices for calculations in observe_and_control method
         due_controller.set_matrix_r_and_y(due_roll, due_pitch, due_yaw, due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
         // compute control actions for each motor
@@ -97,6 +112,7 @@ void loop() {
         if(due_arm_status == true) {
             due_motors.write_speed_to_esc(due_front_left, due_front_right, due_back_left, due_back_right);
         }
+        // reset interrupt flag
         flag_flight_control = false;
     }
 

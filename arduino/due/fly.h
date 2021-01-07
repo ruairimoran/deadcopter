@@ -1,4 +1,4 @@
-// 2021-01-05 21:43:24.493286
+// 2021-01-06 14:54:00.454812
 
 #ifndef fly.h
 #define fly.h
@@ -99,39 +99,36 @@ class Fly {
 {0.,0.,0.},
 {0.,0.,0.}};  // for calculating new equilibrium state and control action
 
-    
-    float throttle_and_u[4] = {{0}, {0}, {0}, {0}};  // control action on quadcopter (throttle, u_x, u_y, u_z)
-    float r[6];  // control input from receiver (q1, q2, q3, 0, 0, 0)
-    float r_short[3];  // for solving equilibrium faster
-    float z[6] = {{0}, {0}, {0}, {0}, {0}, {0}};  // storing integral values
-    float y[6];  // IMU values
-    float y_hat[6];  // observed IMU values
-    float x_hat[9] = {{0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}, {0}};  // observed state
-    float x_hat_buffer[9];  // for using x_hat when calculating x_hat
-    float xu_e[12];  // for equilibrium state
-    float y_diff[6];  // for full y_hat - y
-    float x_diff[9];  // for full x_hat - x_e
-    
+    float throttle_and_u[4] = {0};  // control action on quadcopter (throttle, u_x, u_y, u_z)
+    float r[6] = {0};  // control input from receiver (q1, q2, q3, 0, 0, 0)
+    float r_short[3] = {0};  // for solving equilibrium faster
+    float z[6] = {0};  // storing integral values
+    float y[6] = {0};  // IMU values
+    float y_hat[6] = {0};  // observed IMU values
+    float x_hat[9] = {0};  // observed state
+    float x_hat_buffer[9] = {0};  // for using x_hat when calculating x_hat
+    float xu_e[12] = {0};  // for equilibrium state
+    float y_diff[6] = {0};  // for full y_hat - y
+    float x_diff[9] = {0};  // for full x_hat - x_e
 
     // for formatting into output to motor
-    float output_to_motor[4];
+    float output_to_motor[4] = {0};  // motor pwm from calculations
     float motor_proportions[4][4] = {{1.0, 1.0, -1.0, -1.0},
                                      {1.0, -1.0, -1.0, 1.0},
                                      {1.0, 1.0, 1.0, 1.0},
                                      {1.0, -1.0, 1.0, -1.0}};  // motor_speeds = motor_proportions * throttle_and_control
 
     // for solving quaternion differences
-    float invSqrt(float input);
     float solve_q0(float q1, float q2, float q3);
     float quaternion_difference(float w1, float x1, float y1, float z1,
                                 float w2, float x2, float y2, float z2,
                                 float &w3, float &x3, float &y3, float &z3);
-    float q0_y_hat;
-    float q0_y;
-    float q0_y_diff;
-    float q0_x_hat;
-    float q0_x_e;  // x_equilibrium
-    float q0_x_diff;
+    float q0_y_hat = 0;  // observed y q0
+    float q0_y = 0;  // measured q0
+    float q0_y_diff = 0;  // q0 of y_hat - y
+    float q0_x_hat = 0;  // observed x q0
+    float q0_x_e = 0;  // x_equilibrium
+    float q0_x_diff = 0;  // q0 of x_hat - x_e
 
     public:
     Fly();
@@ -150,17 +147,17 @@ Fly::Fly() {
 
 }
 
-float Fly::invSqrt(float input) {
+float invSqrt(float input) {
     // Fast inverse square-root
     // See: http://en.wikipedia.org/wiki/Fast_inverse_square_root
-//	float half_input = 0.5f * input;
-//	float output = input;
-//	long i = *(long*)&output;
-//	i = 0x5f3759df - (i>>1);
-//	output = *(float*)&i;
-//	output = output * (1.5f - (half_input * output * output));
-//	output = output * (1.5f - (half_input * output * output));
-	return input;
+	float half_input = 0.5f * input;
+	float output = input;
+	long i = *(long*)&output;
+	i = 0x5f3759df - (i>>1);
+	output = *(float*)&i;
+	output = output * (1.5f - (half_input * output * output));  // first Newton Raphson iteration
+	output = output * (1.5f - (half_input * output * output));  // second Newton Raphson iteration
+	return output;
 }
 
 float Fly::solve_q0(float q1, float q2, float q3) {
@@ -318,18 +315,18 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     
 
 
-//    // testing outputs for serial print // to be deleted
-//    f_u0 = throttle_and_u[0];
-//    f_u1 = throttle_and_u[1];
-//    f_u2 = throttle_and_u[2];
-//
-//    fq0y = q0_y;
-//    f_y0 = y[0];
-//    f_y1 = y[0];
-//    f_y2 = y[0];
-//    f_y3 = y[0];
-//    f_y4 = y[0];
-//    f_y5 = y[0];
+    // testing outputs for serial print // to be deleted
+    f_u0 = throttle_and_u[0];
+    f_u1 = throttle_and_u[1];
+    f_u2 = throttle_and_u[2];
+
+    fq0y = q0_y;
+    f_y0 = y[0];
+    f_y1 = y[0];
+    f_y2 = y[0];
+    f_y3 = y[0];
+    f_y4 = y[0];
+    f_y5 = y[0];
 }
 
 #endif

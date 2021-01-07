@@ -20,12 +20,19 @@
 
 class Receiver {
     private:
-    unsigned long int current_time, previous_time, time_difference;  // for calculating pulse separation time
-    int read_rx[PULSE_GAPS_MEASURED], decode_rx[PULSE_GAPS_MEASURED], output_rx[NO_OF_CHANNELS+1];  // arrays to store values
+    unsigned long int current_time = 0;  // for calculating pulse separation time
+    unsigned long int previous_time = 0;
+    unsigned long int time_difference = 0;
+    int read_rx[PULSE_GAPS_MEASURED] = {0};  // store time difference value on receiver pulse interrupt
+    int decode_rx[PULSE_GAPS_MEASURED] = {0};  // store full set of time differences
+    int output_rx[NO_OF_CHANNELS+1] = {0};  // store receiver channel values
 
     public:
     Receiver();
-    int aux_channel_1, aux_channel_2, aux_channel_3, aux_channel_4;
+    int aux_channel_1 = 0;
+    int aux_channel_2 = 0;
+    int aux_channel_3 = 0;
+    int aux_channel_4 = 0;
     void read_ppm(void);
     void decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw);
 };

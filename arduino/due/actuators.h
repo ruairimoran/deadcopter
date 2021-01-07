@@ -1,4 +1,4 @@
-// 2021-01-05 21:43:24.493286
+// 2021-01-06 14:54:00.454812
 
 #ifndef actuators.h
 #define actuators.h
@@ -24,7 +24,7 @@ class Esc {
     Servo esc_front_right;
     Servo esc_back_left;
     Servo esc_back_right;
-    bool arm_status;
+    bool arm_status = false;
 
     public:
     Esc();

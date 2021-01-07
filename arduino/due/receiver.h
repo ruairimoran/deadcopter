@@ -1,9 +1,10 @@
-// 2021-01-05 21:43:24.493286
+// 2021-01-06 14:54:00.454812
 
 #ifndef receiver.h
 #define receiver.h
 
 #include <Arduino.h>
+#include <PulsePosition.h>
 #include <math.h>
 
 #define RX_PIN 7  // input pin for wire from receiver
@@ -20,71 +21,38 @@
 
 class Receiver {
     private:
-    unsigned long int current_time, previous_time, time_difference;  // for calculating pulse separation time
-    int read_rx[PULSE_GAPS_MEASURED], decode_rx[PULSE_GAPS_MEASURED], output_rx[NO_OF_CHANNELS+1];  // arrays to store values
+    PulsePositionInput ppm_lib;
+//    float output_rx[NO_OF_CHANNELS+1] = {0};  // store receiver channel values
 
     public:
     Receiver();
-    int aux_channel_1, aux_channel_2, aux_channel_3, aux_channel_4;
-    void read_ppm(void);
-    void decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw);
+    int aux_channel_1 = 0;
+    int aux_channel_2 = 0;
+    int aux_channel_3 = 0;
+    int aux_channel_4 = 0;
+    void configure_receiver(void);
+    void read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 Receiver::Receiver() {
-    pinMode(RX_PIN, INPUT_PULLUP);
+//    pinMode(RX_PIN, INPUT_PULLUP);
 }
 
-void Receiver::read_ppm(void) {
-    static int i, j;  // counters
-    // reads frames from RC receiver PPM pin
-    // gives channel values from 1000 - 2000
-    current_time = micros();  // store current time value when pin value rising
-    time_difference = current_time - previous_time;  // calculate time between two rising edges
-    previous_time = current_time;
-    read_rx[i] = time_difference;  // store value in array
-    i += 1;
-    if(i==PULSE_GAPS_MEASURED) {  // copy all values from temporary array into analysis array after PULSE_GAPS_MEASURED readings
-        decode_rx[0] = read_rx[0];
-        decode_rx[1] = read_rx[1];
-        decode_rx[2] = read_rx[2];
-        decode_rx[3] = read_rx[3];
-        decode_rx[4] = read_rx[4];
-        decode_rx[5] = read_rx[5];
-        decode_rx[6] = read_rx[6];
-        decode_rx[7] = read_rx[7];
-        decode_rx[8] = read_rx[8];
-        decode_rx[9] = read_rx[9];
-        decode_rx[10] = read_rx[10];
-        decode_rx[11] = read_rx[11];
-        decode_rx[12] = read_rx[12];
-        decode_rx[13] = read_rx[13];
-        decode_rx[14] = read_rx[14];
-        decode_rx[15] = read_rx[15];
-        decode_rx[16] = read_rx[16];
-        i=0;
-    }
+void Receiver::configure_receiver(void) {
+    ppm_lib.begin(RX_PIN);
 }
 
-void Receiver::decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw) {
-    static int p, q, r;  // counters
-    for (r=PULSE_GAPS_MEASURED-1; r>-1; r--) {
-        if (decode_rx[r]>FRAME_CHANGE) {
-            q = r;  // detect first separation space of >FRAME_CHANGEus in analysis array
-        }
-    }
-    for (p=1; p<=NO_OF_CHANNELS; p++){
-        output_rx[p] = decode_rx[p+q];  // output 8 channel values after first separation space
-    }
-    rx_throttle = map(output_rx[3], RECEIVER_MIN, RECEIVER_MAX, THROTTLE_MIN, THROTTLE_MAX);
-    rx_roll = map(output_rx[1], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-    rx_pitch = map(output_rx[2], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-    rx_yaw = map(output_rx[4], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-    aux_channel_1 = output_rx[5];
-    aux_channel_2 = output_rx[6];
-    aux_channel_3 = output_rx[7];
-    aux_channel_4 = output_rx[8];
+void Receiver::read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw) {
+    rx_throttle = map(ppm_lib.read(3), RECEIVER_MIN, RECEIVER_MAX, THROTTLE_MIN, THROTTLE_MAX);
+    rx_roll = map(ppm_lib.read(1), RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
+    rx_pitch = map(ppm_lib.read(2), RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
+    rx_yaw = map(ppm_lib.read(4), RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
+    aux_channel_1 = ceil(ppm_lib.read(5));
+    aux_channel_2 = ceil(ppm_lib.read(6));
+    aux_channel_3 = ceil(ppm_lib.read(7));
+    aux_channel_4 = ceil(ppm_lib.read(8));
 }
 
 #endif
