@@ -1,4 +1,4 @@
-// 2021-01-06 14:54:00.454812
+// 2021-01-07 15:49:37.113125
 
 #ifndef fly.h
 #define fly.h
@@ -316,9 +316,9 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
 
 
     // testing outputs for serial print // to be deleted
-    f_u0 = throttle_and_u[0];
-    f_u1 = throttle_and_u[1];
-    f_u2 = throttle_and_u[2];
+    f_u0 = throttle_and_u[1];
+    f_u1 = throttle_and_u[2];
+    f_u2 = throttle_and_u[3];
 
     fq0y = q0_y;
     f_y0 = y[0];

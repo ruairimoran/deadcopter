@@ -43,21 +43,25 @@ void get_read_ppm() {
     due_receiver.read_ppm();  // cannot call function directly in interrupt
 }
 
-void refresh_receiver() {
-    // set interrupt flag
-    flag_refresh_receiver = true;
-}
-
 void flight_control() {
+    // get receiver control
+    due_receiver.read_channels(due_throttle, due_roll, due_pitch, due_yaw);
     // get imu values
     due_imu.update_imu_data(due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
-    // set interrupt flag
-    flag_flight_control = true;
+    // setup y and r matrices for calculations in observe_and_control method
+    due_controller.set_matrix_r_and_y(due_roll, due_pitch, due_yaw, due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
+    // compute control actions for each motor
+    due_controller.observe_and_control(due_throttle, due_front_left, due_front_right, due_back_left, due_back_right, _u0, _u1, _u2, q0y, _y0, _y1, _y2, _y3, _y4, _y5);
+    // check if copter is armed
+    due_motors.get_arm_status(due_arm_status);
+    // if copter is armed, send control action to motor ESCs
+    if(due_arm_status == true) {
+        due_motors.write_speed_to_esc(due_front_left, due_front_right, due_back_left, due_back_right);
+    }
 }
 
 void setup() {
     attachInterrupt(digitalPinToInterrupt(RX_PIN), get_read_ppm, RISING);  // enable receiver ppm interrupt
-    Timer6.attachInterrupt(refresh_receiver).setPeriod(40000).start();  // refresh receiver values every 40ms - each ppm frame is 20ms
     attachInterrupt(digitalPinToInterrupt(IMU_INTERRUPT_PIN), flight_control, RISING);  // enable data ready interrupt from imu
     due_imu.configure_imu_and_madgwick();  // start communication with imu with madgwick filter
     due_motors.attach_esc_to_pwm_pin();
@@ -71,16 +75,6 @@ void setup() {
 }
 
 void loop() {
-//----------------------------------------------------------------------------------------------------------------------
-    // update receiver values
-
-    if(flag_refresh_receiver == true) {
-        // get receiver control
-        due_receiver.decode_ppm(due_throttle, due_roll, due_pitch, due_yaw);
-        // reset interrupt flag
-        flag_refresh_receiver = false;
-    }
-
 //----------------------------------------------------------------------------------------------------------------------
     // arm/disarm motors with switch on aux_channel_1
 
@@ -96,24 +90,6 @@ void loop() {
     }                      // then arm motors
     if (due_receiver.aux_channel_1 < 1500) {
         due_motors.disarm();  // if Tx arm switch Low, disarm motors indefinitely
-    }
-
-//----------------------------------------------------------------------------------------------------------------------
-    // flight control to update motor pwm
-
-    if(flag_flight_control == true) {
-        // setup y and r matrices for calculations in observe_and_control method
-        due_controller.set_matrix_r_and_y(due_roll, due_pitch, due_yaw, due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
-        // compute control actions for each motor
-        due_controller.observe_and_control(due_throttle, due_front_left, due_front_right, due_back_left, due_back_right, _u0, _u1, _u2, q0y, _y0, _y1, _y2, _y3, _y4, _y5);
-        // check if copter is armed
-        due_motors.get_arm_status(due_arm_status);
-        // if copter is armed, send control action to motor ESCs
-        if(due_arm_status == true) {
-            due_motors.write_speed_to_esc(due_front_left, due_front_right, due_back_left, due_back_right);
-        }
-        // reset interrupt flag
-        flag_flight_control = false;
     }
 
 //----------------------------------------------------------------------------------------------------------------------

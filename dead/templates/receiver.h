@@ -34,7 +34,7 @@ class Receiver {
     int aux_channel_3 = 0;
     int aux_channel_4 = 0;
     void read_ppm(void);
-    void decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw);
+    void read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -44,32 +44,22 @@ Receiver::Receiver() {
 }
 
 void Receiver::read_ppm(void) {
-    static int i, j;  // counters
-    // reads frames from RC receiver PPM pin
-    // gives channel values from 1000 - 2000
-    current_time = micros();  // store current time value when pin value rising
-    time_difference = current_time - previous_time;  // calculate time between two rising edges
-    previous_time = current_time;
-    read_rx[i] = time_difference;  // store value in array
-    i += 1;
-    if(i==PULSE_GAPS_MEASURED) {  // copy all values from temporary array into analysis array after PULSE_GAPS_MEASURED readings
-        {% for pulse_gap in range(2*number_of_rx_channels+1) -%}
-        decode_rx[{{pulse_gap}}] = read_rx[{{pulse_gap}}];
-        {% endfor -%}
-        i=0;
+    uint16_t now,diff;
+    static uint16_t last = 0;
+    static uint8_t chan = 1;
+    now = micros();
+    diff = now - last;
+    last = now;
+    if(diff>3000) chan = 1;
+    else {
+        if(900<diff && diff<2200 && chan<NO_OF_CHANNELS+1 ) {  //Only if the signal is between these values it is valid
+            output_rx[chan] = diff;
+        }
+    chan++;
     }
 }
 
-void Receiver::decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw) {
-    static int p, q, r;  // counters
-    for (r=PULSE_GAPS_MEASURED-1; r>-1; r--) {
-        if (decode_rx[r]>FRAME_CHANGE) {
-            q = r;  // detect first separation space of >FRAME_CHANGEus in analysis array
-        }
-    }
-    for (p=1; p<=NO_OF_CHANNELS; p++){
-        output_rx[p] = decode_rx[p+q];  // output 8 channel values after first separation space
-    }
+void Receiver::read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw) {
     rx_throttle = map(output_rx[{{throttle_channel}}], RECEIVER_MIN, RECEIVER_MAX, THROTTLE_MIN, THROTTLE_MAX);
     rx_roll = map(output_rx[{{roll_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
     rx_pitch = map(output_rx[{{pitch_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
