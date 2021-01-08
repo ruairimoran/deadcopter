@@ -14,7 +14,6 @@ Imu due_imu;  // create imu object from imu.h
 Fly due_controller;  // create controller/observer object from fly.h
 Esc due_motors;  // create receiver object from receiver.h
 
-bool flag_refresh_receiver = false;  // for interrupt to tell loop to update receiver values
 bool flag_flight_control = false;  // for interrupt to tell loop to run flight control
 bool due_arm_status = false;  // motors armed status
 bool due_arm_switch_status = false;  // Tx arm switch status
@@ -44,34 +43,26 @@ void get_read_ppm() {
 }
 
 void flight_control() {
-    interrupts();
     // get receiver control
     due_receiver.read_channels(due_throttle, due_roll, due_pitch, due_yaw);
     // get imu values
     due_imu.update_imu_data(due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
-    // setup y and r matrices for calculations in observe_and_control method
-    due_controller.set_matrix_r_and_y(due_roll, due_pitch, due_yaw, due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
-    // compute control actions for each motor
-    due_controller.observe_and_control(due_throttle, due_front_left, due_front_right, due_back_left, due_back_right, _u0, _u1, _u2, q0y, _y0, _y1, _y2, _y3, _y4, _y5);
-    // check if copter is armed
-    due_motors.get_arm_status(due_arm_status);
-    // if copter is armed, send control action to motor ESCs
-    if(due_arm_status == true) {
-        due_motors.write_speed_to_esc(due_front_left, due_front_right, due_back_left, due_back_right);
-    }
+    // set flag for interrupt
+    flag_flight_control = true;
 }
 
 void setup() {
-    attachInterrupt(digitalPinToInterrupt(RX_PIN), get_read_ppm, RISING);  // enable receiver ppm interrupt
-    attachInterrupt(digitalPinToInterrupt(IMU_INTERRUPT_PIN), flight_control, RISING);  // enable data ready interrupt from imu
     due_imu.configure_imu_and_madgwick();  // start communication with imu with madgwick filter
     due_motors.attach_esc_to_pwm_pin();
     due_motors.disarm();
     due_motors.get_arm_status(due_arm_status);
+    attachInterrupt(digitalPinToInterrupt(RX_PIN), get_read_ppm, RISING);  // enable receiver ppm interrupt
+    delay(100);
+    attachInterrupt(digitalPinToInterrupt(IMU_INTERRUPT_PIN), flight_control, RISING);  // enable data ready interrupt from imu
 
      // for serial output // to be deleted
      Serial.begin(115200);
-     millisPerSerialOutput = 200;  // 0.5s refresh rate
+     millisPerSerialOutput = 50;  // 0.5s refresh rate
      millisPrevious1 = millis();
 }
 
@@ -94,32 +85,55 @@ void loop() {
     }
 
 //----------------------------------------------------------------------------------------------------------------------
+    // rest of flight control
 
+    if(flag_flight_control == true) {
+        // setup y and r matrices for calculations in observe_and_control method
+        due_controller.set_matrix_r_and_y(due_roll, due_pitch, due_yaw, due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
+        // compute control actions for each motor
+        due_controller.observe_and_control(due_throttle, due_front_left, due_front_right, due_back_left, due_back_right, _u0, _u1, _u2, q0y, _y0, _y1, _y2, _y3, _y4, _y5);
+        // check if copter is armed
+        due_motors.get_arm_status(due_arm_status);
+        // if copter is armed, send control action to motor ESCs
+        if(due_arm_status == true) {
+            due_motors.write_speed_to_esc(due_front_left, due_front_right, due_back_left, due_back_right);
+        }
+        // clear flag for interrupt
+        flag_flight_control = false;
+    }
+
+//----------------------------------------------------------------------------------------------------------------------
      // to be deleted
      millisNow1 = millis();
      if(millisNow1 - millisPrevious1 >= millisPerSerialOutput) {
-          Serial.print(_u0, 7);Serial.print("\t");
-          Serial.print(_u1, 7);Serial.print("\t");
-          Serial.print(_u2, 7);Serial.print("\n");
+          Serial.print(micros());Serial.print("\t");Serial.print("\t");
+//          Serial.print(_u0, 7);Serial.print("\t");
+//          Serial.print(_u1, 7);Serial.print("\t");
+//          Serial.print(_u2, 7);Serial.print("\t");Serial.print("\t");
 
-          Serial.print(q0y, 7);Serial.print("\t");
-          Serial.print(_y0, 7);Serial.print("\t");
-          Serial.print(_y1, 7);Serial.print("\t");
-          Serial.print(_y2, 7);Serial.print("\t");
-          Serial.print(_y3, 7);Serial.print("\t");
-          Serial.print(_y4, 7);Serial.print("\t");
-          Serial.print(_y5, 7);Serial.print("\n");
+//          Serial.print(q0y, 7);Serial.print("\t");
+//          Serial.print(_y0, 7);Serial.print("\t");
+//          Serial.print(_y1, 7);Serial.print("\t");
+//          Serial.print(_y2, 7);Serial.print("\t");
+//          Serial.print(_y3, 7);Serial.print("\t");
+//          Serial.print(_y4, 7);Serial.print("\t");
+//          Serial.print(_y5, 7);Serial.print("\t");Serial.print("\t");
 
           Serial.print(due_arm_status);Serial.print("\t");
           Serial.print(due_throttle);Serial.print("\t");
           Serial.print(due_yaw);Serial.print("\t");
           Serial.print(due_pitch);Serial.print("\t");
-          Serial.print(due_roll);Serial.print("\n");
+          Serial.print(due_roll);Serial.print("\t");Serial.print("\t");
 
-          Serial.print(due_front_left);Serial.print("\t");
-          Serial.print(due_front_right);Serial.print("\t");
-          Serial.print(due_back_left);Serial.print("\t");
-          Serial.print(due_back_right);Serial.print("\n");
+          Serial.print(due_receiver.aux_channel_1);Serial.print("\t");
+          Serial.print(due_receiver.aux_channel_2);Serial.print("\t");
+          Serial.print(due_receiver.aux_channel_3);Serial.print("\t");
+          Serial.print(due_receiver.aux_channel_4);Serial.print("\t");Serial.print("\n");
+
+//          Serial.print(due_front_left);Serial.print("\t");
+//          Serial.print(due_front_right);Serial.print("\t");
+//          Serial.print(due_back_left);Serial.print("\t");
+//          Serial.print(due_back_right);Serial.print("\n");
 
           millisPrevious1 = millisPrevious1 + millisPerSerialOutput;
      }

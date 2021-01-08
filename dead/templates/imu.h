@@ -34,7 +34,7 @@ class Imu {
     Imu();
     void configure_imu_and_madgwick(void);
     void calibrate_imu(void);
-    float update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2,
+    void update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2,
                           float &imu_y_3, float &imu_y_4, float &imu_y_5);
 };
 
@@ -82,7 +82,7 @@ void Imu::calibrate_imu(void) {
     imu_lib.calibrateGyro();
 }
 
-float Imu::update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2,
+void Imu::update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2,
                            float &imu_y_3, float &imu_y_4, float &imu_y_5) {
     // led flashing to show update is being run
     // should toggle once per second

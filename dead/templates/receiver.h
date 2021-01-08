@@ -23,8 +23,6 @@ class Receiver {
     unsigned long int current_time = 0;  // for calculating pulse separation time
     unsigned long int previous_time = 0;
     unsigned long int time_difference = 0;
-    int read_rx[PULSE_GAPS_MEASURED] = {0};  // store time difference value on receiver pulse interrupt
-    int decode_rx[PULSE_GAPS_MEASURED] = {0};  // store full set of time differences
     int output_rx[NO_OF_CHANNELS+1] = {0};  // store receiver channel values
 
     public:
@@ -44,18 +42,17 @@ Receiver::Receiver() {
 }
 
 void Receiver::read_ppm(void) {
-    uint16_t now,diff;
-    static uint16_t last = 0;
-    static uint8_t chan = 1;
-    now = micros();
-    diff = now - last;
-    last = now;
-    if(diff>3000) chan = 1;
+    current_time = micros();  // store current time in microseconds
+    time_difference = current_time - previous_time;
+    previous_time = current_time;  // update previous_time for next interrupt call
+    if(time_difference>5000) {  // if time difference between pulses is >5000us, this indicates the start of a PPM frame (which are 20ms)
+        channel = 1;  // therefore the next pulse time read will be channel 1
+    }
     else {
-        if(900<diff && diff<2200 && chan<NO_OF_CHANNELS+1 ) {  //Only if the signal is between these values it is valid
-            output_rx[chan] = diff;
+        if((900<time_difference) && (time_difference<2100) && (channel<NO_OF_CHANNELS+1)) {  // PPM signals only valid between 900 and 2100us
+            output_rx[channel] = time_difference;  // Set channel value
         }
-    chan++;
+        channel += 1;  // Next interrupt will calculate next channel
     }
 }
 

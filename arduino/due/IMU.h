@@ -8,7 +8,7 @@
 #include <MadgwickAHRS.h>
 #include <math.h>
 
-#define SAMPLING_FREQUENCY 125
+#define SAMPLING_FREQUENCY 125  
 #define IMU_INTERRUPT_PIN 6  // interrupt pin to signal when imu data ready
 
 class Imu {

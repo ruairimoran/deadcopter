@@ -15,8 +15,6 @@
 #define IDLE_ROTOR_SPEED {{idle_thrust_pwm}}  // 1150
 #define ABSOLUTE_MIN_PWM {{absolute_min_pwm_value}}  // 1000
 #define ABSOLUTE_MAX_PWM {{absolute_max_pwm_value}}  // 2000
-#define SERVO_LIBRARY_MIN_ANGLE {{servo_range_min}}  // 0 degrees
-#define SERVO_LIBRARY_MAX_ANGLE {{servo_range_max}}  // 180 degrees
 
 class Esc {
     private:
