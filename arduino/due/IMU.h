@@ -1,4 +1,4 @@
-// 2021-01-07 15:49:37.113125
+// 2021-01-09 01:12:25.336454
 
 #ifndef imu.h
 #define imu.h
@@ -8,7 +8,7 @@
 #include <MadgwickAHRS.h>
 #include <math.h>
 
-#define SAMPLING_FREQUENCY 125  
+#define SAMPLING_FREQUENCY 125  // rate for reading imu
 #define IMU_INTERRUPT_PIN 6  // interrupt pin to signal when imu data ready
 
 class Imu {
@@ -34,7 +34,7 @@ class Imu {
     Imu();
     void configure_imu_and_madgwick(void);
     void calibrate_imu(void);
-    float update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2,
+    void update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2,
                           float &imu_y_3, float &imu_y_4, float &imu_y_5);
 };
 
@@ -46,23 +46,22 @@ Imu::Imu() : imu_lib{Wire,0x68} {
 }
 
 void Imu::configure_imu_and_madgwick(void) {
-    while(imu_status < 0) {
+    while(imu_status < 0) {  // until imu starts communicating
         configure_madgwick_lib();
         configure_imu();
-        digitalWrite(LED_BUILTIN, HIGH);
+        digitalWrite(LED_BUILTIN, HIGH);  // LED will remain solid on if imu not communicating
     }
 }
 
 void Imu::configure_madgwick_lib(void) {
     madgwick_lib.begin(SAMPLING_FREQUENCY);
-    madgwick_lib.set_beta(1.0f);  // set madgwick filter gain
+    // edited MadgwickAHRS.cpp to allow gain (beta) to be set from sketch
+    madgwick_lib.set_beta(1.0f);  // set filter gain
 }
 
 void Imu::configure_imu(void) {
     // start communication with imu
     imu_status = imu_lib.begin();
-    // disable imu creating it's own interrupt when data is ready
-    imu_lib.enableDataReadyInterrupt();
     // setting the accelerometer full scale range to +/-8G
     imu_lib.setAccelRange(MPU9250::ACCEL_RANGE_8G); // GOTO imu_lib readme for possible ranges
     // setting the gyroscope full scale range to +/-1000 deg/s
@@ -82,7 +81,7 @@ void Imu::calibrate_imu(void) {
     imu_lib.calibrateGyro();
 }
 
-float Imu::update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2,
+void Imu::update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1, float &imu_y_2,
                            float &imu_y_3, float &imu_y_4, float &imu_y_5) {
     // led flashing to show update is being run
     // should toggle once per second

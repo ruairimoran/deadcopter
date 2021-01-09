@@ -191,9 +191,6 @@ void loop() {
 //----------------------------------------------------------------------------------------------------------------------
     // wait for break in PPM to run rest of loop (runs every ~20ms)
     if(channel > 8) {
-        // detach ppm interrupt
-        detachInterrupt(digitalPinToInterrupt(RX_PIN));
-
         // get receiver values
         read_channels(throttle, roll, pitch, yaw);  // takes ~6us to complete
         
@@ -209,8 +206,5 @@ void loop() {
         
             millisPrevious += millisPerSerialOutput;
         }
-
-//        // attach ppm interrupt
-        attachInterrupt(digitalPinToInterrupt(RX_PIN), ISR_read_ppm, RISING);  // enable receiver ppm interrupt (fires 9 times in 20ms, every 20ms)
     }
 }

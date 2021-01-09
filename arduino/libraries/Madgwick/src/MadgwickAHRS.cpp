@@ -45,7 +45,7 @@ Madgwick::Madgwick() {
 	anglesComputed = 0;
 }
 
-void Madgwick::update(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, volatile float &_q0, volatile float &_q1, volatile float &_q2, volatile float &_q3) {
+void Madgwick::update(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float &_q0, float &_q1, float &_q2, float &_q3) {
 	float recipNorm;
 	float s0, s1, s2, s3;
 	float qDot1, qDot2, qDot3, qDot4;
@@ -155,7 +155,7 @@ void Madgwick::update(float gx, float gy, float gz, float ax, float ay, float az
 //-------------------------------------------------------------------------------------------
 // IMU algorithm update
 
-void Madgwick::updateIMU(float gx, float gy, float gz, float ax, float ay, float az, volatile float &_q0, volatile float &_q1, volatile float &_q2, volatile float &_q3) {
+void Madgwick::updateIMU(float gx, float gy, float gz, float ax, float ay, float az, float &_q0, float &_q1, float &_q2, float &_q3) {
 	float recipNorm;
 	float s0, s1, s2, s3;
 	float qDot1, qDot2, qDot3, qDot4;

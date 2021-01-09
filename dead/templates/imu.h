@@ -8,7 +8,7 @@
 #include <MadgwickAHRS.h>
 #include <math.h>
 
-#define SAMPLING_FREQUENCY {{sample_freq}}
+#define SAMPLING_FREQUENCY {{sample_freq}}  // rate for reading imu
 #define IMU_INTERRUPT_PIN {{imu_int_pin}}  // interrupt pin to signal when imu data ready
 
 class Imu {
@@ -46,23 +46,22 @@ Imu::Imu() : imu_lib{Wire,0x68} {
 }
 
 void Imu::configure_imu_and_madgwick(void) {
-    while(imu_status < 0) {
+    while(imu_status < 0) {  // until imu starts communicating
         configure_madgwick_lib();
         configure_imu();
-        digitalWrite(LED_BUILTIN, HIGH);
+        digitalWrite(LED_BUILTIN, HIGH);  // LED will remain solid on if imu not communicating
     }
 }
 
 void Imu::configure_madgwick_lib(void) {
     madgwick_lib.begin(SAMPLING_FREQUENCY);
-    madgwick_lib.set_beta(1.0f);  // set madgwick filter gain
+    // edited MadgwickAHRS.cpp to allow gain (beta) to be set from sketch
+    madgwick_lib.set_beta(1.0f);  // set filter gain
 }
 
 void Imu::configure_imu(void) {
     // start communication with imu
     imu_status = imu_lib.begin();
-    // disable imu creating it's own interrupt when data is ready
-    imu_lib.enableDataReadyInterrupt();
     // setting the accelerometer full scale range to +/-8G
     imu_lib.setAccelRange(MPU9250::ACCEL_RANGE_8G); // GOTO imu_lib readme for possible ranges
     // setting the gyroscope full scale range to +/-1000 deg/s

@@ -1,4 +1,4 @@
-// 2021-01-07 15:49:37.113125
+// 2021-01-09 01:12:25.336454
 
 #ifndef actuators.h
 #define actuators.h
@@ -15,8 +15,6 @@
 #define IDLE_ROTOR_SPEED 1150  // 1150
 #define ABSOLUTE_MIN_PWM 1000  // 1000
 #define ABSOLUTE_MAX_PWM 2000  // 2000
-#define SERVO_LIBRARY_MIN_ANGLE 0  // 0 degrees
-#define SERVO_LIBRARY_MAX_ANGLE 180  // 180 degrees
 
 class Esc {
     private:
