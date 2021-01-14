@@ -71,7 +71,7 @@ class Simulator:
             y = np.asarray(self.__Cd @ copter.state[1:10]).reshape(6, )
             y += self.__measurement_noise_multiplier * v_omega
 
-            z = z + r - y
+            # z = z + r - y
 
             xu_equilibriums = self.__G @ r
             state_quaternion = Quaternion(copter.quaternion)

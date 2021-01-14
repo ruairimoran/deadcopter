@@ -10,23 +10,23 @@ timestamp = datetime.datetime.utcnow()
 # run simulator to get constant matrices
 
 # copter intialisation
-copter = dead.copter.copter.DeadCopter(mass=2,
-                                       arm_length=0.225,
-                                       K_v=1000,
-                                       voltage_max=18,
-                                       voltage_min=15,
-                                       prop_diameter_in=10)
+copter = dead.copter.copter.DeadCopter(mass=2,  # mass of entire copter in kg
+                                       arm_length=0.225,  # half the distance between two opposite motors in m
+                                       K_v=1000,  # Kv rating of the motors
+                                       voltage_max=18,  # max voltage of battery in V
+                                       voltage_min=15,  # min voltage of battery in V
+                                       prop_diameter_in=10)  # propeller diameter in inches
 
 # simulator intialisation
-sampling_frequency = 125  # 238
-sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=1/sampling_frequency)
+sampling_frequency = 125  # in Hz - sets refresh rate of ESCs
+sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=1/sampling_frequency)  # do not change
 
 # system design
 Ad, Bd, Cd, K_x, K_z, L, wide_G = sim.system_design(copter)  # wide_G has 6 columns
-G = np.delete(wide_G, [3, 4, 5], 1)  # delete last 3 columns of wide_G as last three elements of r are zeros
+G = np.delete(wide_G, [3, 4, 5], 1)  # deletes last 3 columns of wide_G as last three elements of r are zeros
 
 
-# reformat python matrices output syntax to c++ array syntax
+# reformat python matrices output syntax to C++ array syntax
 def reformat_matrix_to_array(python_matrix):
     py_array_format = np.array(python_matrix)                    # arrays with negative values have different
     if str(py_array_format).count(" -") > 0:                     # output syntax to all positive arrays

@@ -1,4 +1,4 @@
-// 2021-01-09 01:12:25.336454
+// 2021-01-09 14:18:50.899301
 
 #ifndef receiver.h
 #define receiver.h
@@ -8,7 +8,7 @@
 
 #define RX_PIN 7  // input pin for wire from receiver
 #define NO_OF_CHANNELS 8 // number of receiver channels
-#define FRAME_CHANGE 3500  // must be less than time between last pulse in one frame and first pulse in next frame,
+#define FRAME_CHANGE 4000  // must be less than time between last pulse in one frame and first pulse in next frame,
                                             // but more than maximum time between any consecutive pulses in the same frame,
                                             // measured using "receiver_pulse_test_time.ino" in microseconds (default: 5000)
 #define RECEIVER_MIN 1070  // minimum pwm input from receiver channel
@@ -27,13 +27,9 @@ class Receiver {
 
     public:
     Receiver();
-    int aux_channel_1 = 0;
-    int aux_channel_2 = 0;
-    int aux_channel_3 = 0;
-    int aux_channel_4 = 0;
     void ISR_read_ppm(void);
     int get_channel(void);
-    void read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw);
+    void read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw, int &rx_aux_1, int &rx_aux_2, int &rx_aux_3, int &rx_aux_4);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -61,16 +57,16 @@ int Receiver::get_channel(void) {
     return channel;
 }
 
-void Receiver::read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw) {
+void Receiver::read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw, int &rx_aux_1, int &rx_aux_2, int &rx_aux_3, int &rx_aux_4) {
     // reformat receiver values
-    rx_throttle = map(output_rx[3], RECEIVER_MIN, RECEIVER_MAX, THROTTLE_MIN, THROTTLE_MAX);
+    rx_throttle = output_rx[3];  // RECEIVER_MIN, RECEIVER_MAX, THROTTLE_MIN, THROTTLE_MAX);
     rx_roll = map(output_rx[1], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
     rx_pitch = map(output_rx[2], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
     rx_yaw = map(output_rx[4], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-    aux_channel_1 = output_rx[5];
-    aux_channel_2 = output_rx[6];
-    aux_channel_3 = output_rx[7];
-    aux_channel_4 = output_rx[8];
+    rx_aux_1 = output_rx[5];
+    rx_aux_2 = output_rx[6];
+    rx_aux_3 = output_rx[7];
+    rx_aux_4 = output_rx[8];
 }
 
 #endif

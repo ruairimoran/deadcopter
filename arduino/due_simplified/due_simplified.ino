@@ -1,11 +1,12 @@
 // 2021-01-07 15:49:37.113125
 
 // q means quaternion(q0, q1, q2, q3)
-
+// DueTimer Timers 0,2,3,4,5 unavailable due to use of Servo library
 #include <Arduino.h>
 #include <DueTimer.h>
 #include <MPU9250.h>
 #include <MadgwickAHRS.h>
+#include <Servo.h>
 #include <math.h>
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -48,12 +49,11 @@
         }
     }
 
-    void read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw) {
-        // reformat receiver values
-        rx_throttle = map(output_rx[3], RECEIVER_MIN, RECEIVER_MAX, THROTTLE_MIN, THROTTLE_MAX);
-        rx_roll = map(output_rx[1], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-        rx_pitch = map(output_rx[2], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-        rx_yaw = map(output_rx[4], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
+    void read_channels(void) {
+        throttle = output_rx[3];
+        roll = output_rx[1];
+        pitch = output_rx[2];
+        yaw = output_rx[4];
         aux_channel_1 = output_rx[5];
         aux_channel_2 = output_rx[6];
         aux_channel_3 = output_rx[7];
@@ -146,6 +146,15 @@
 //----------------------------------------------------------------------------------------------------------------------
 
 // Flight Control (fly)
+    void observe_and_control(int throttle, int &front_left, int &front_right, int &back_left, int &back_right) {
+        // some pure maths, no libraries used, takes ~600us to complete
+        delayMicroseconds(600);
+        front_left = throttle;
+        front_right = throttle;
+        back_left = throttle;
+        back_right = throttle;
+    }
+    
     bool flag_flight_control = false;
     
     void ISR_flight_control(void) {
@@ -153,14 +162,50 @@
     }
 
 //----------------------------------------------------------------------------------------------------------------------
+// Electronic Speed Controllers to motors (esc)
+    #define FRONT_LEFT_ESC_PIN 2
+    #define FRONT_RIGHT_ESC_PIN 3
+    #define BACK_LEFT_ESC_PIN 4
+    #define BACK_RIGHT_ESC_PIN 5
+    #define ZERO_ROTOR_SPEED 1000  // 1000
+    #define IDLE_ROTOR_SPEED 1150  // 1150
+    #define ABSOLUTE_MIN_PWM 1000  // 1000
+    #define ABSOLUTE_MAX_PWM 2000  // 2000
+
+    int front_left = 0;  // front left motor pwm
+    int front_right = 0;  // front right motor pwm
+    int back_left = 0;  // back left motor pwm
+    int back_right = 0;  // back right motor pwm
+
+    Servo esc_front_left;  // create servo object to control an ESC
+    Servo esc_front_right;
+    Servo esc_back_left;
+    Servo esc_back_right;
+
+    void attach_esc_to_pwm_pin(void) {
+        esc_front_left.attach(FRONT_LEFT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);  // (PWN pin, absolute min (1000), absolute max (2000))
+        esc_front_right.attach(FRONT_RIGHT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);
+        esc_back_left.attach(BACK_LEFT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);
+        esc_back_right.attach(BACK_RIGHT_ESC_PIN, ABSOLUTE_MIN_PWM, ABSOLUTE_MAX_PWM);
+    }
+
+    void write_speed_to_esc(int front_left, int front_right, int back_left, int back_right) {
+        // send speed to ESCs
+        esc_front_left.writeMicroseconds(front_left);
+        esc_front_right.writeMicroseconds(front_right);
+        esc_back_left.writeMicroseconds(back_left);
+        esc_back_right.writeMicroseconds(back_right);
+    }
+
+//----------------------------------------------------------------------------------------------------------------------    
 
 // for serial timings
     unsigned long fc_time = 0;  // 500ms refresh rate
     unsigned long fc_new = 0;
     unsigned long fc_old = 0;
-    unsigned long millisPerSerialOutput = 500;  // 500ms refresh rate
-    unsigned long millisNow = 0;
-    unsigned long millisPrevious = 0;
+//    unsigned long millisPerSerialOutput = 500;  // 500ms refresh rate
+//    unsigned long millisNow = 0;
+//    unsigned long millisPrevious = 0;
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -168,15 +213,17 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);  // setup LED output on pin 13 (default LED pin)
     configure_imu();  // start communication with imu
     configure_madgwick();  // start madgwick filter
+    attach_esc_to_pwm_pin();  // attach motor esc pins
     attachInterrupt(digitalPinToInterrupt(RX_PIN), ISR_read_ppm, RISING);  // enable receiver ppm interrupt (fires 9 times in 20ms, every 20ms)
     Timer6.attachInterrupt(ISR_flight_control).setFrequency(SAMPLING_FREQUENCY).start();
 
-     // for serial output
-     Serial.begin(115200);
+//     // for serial output
+//     Serial.begin(115200);
 }
 
-void loop() {
 //----------------------------------------------------------------------------------------------------------------------
+
+void loop() {
     // poll imu interrupt pin for data ready
     if(flag_flight_control == true) {
         fc_new = micros();
@@ -184,27 +231,40 @@ void loop() {
         fc_old = fc_new;
         // get imu values
         update_imu_data(y_negative1, y_0, y_1, y_2, y_3, y_4, y_5);  // takes ~910us to complete
+        // compute control actions for each motor
+        observe_and_control(throttle, front_left, front_right, back_left, back_right); // _u0, _u1, _u2, q0y, _y0, _y1, _y2, _y3, _y4, _y5);
+        // send control action to motor ESCs
+        write_speed_to_esc(front_left, front_right, back_left, back_right);
         // reset interrupt flag
         flag_flight_control = false;
     }
   
-//----------------------------------------------------------------------------------------------------------------------
-    // wait for break in PPM to run rest of loop (runs every ~20ms)
-    if(channel > 8) {
-        // get receiver values
-        read_channels(throttle, roll, pitch, yaw);  // takes ~6us to complete
+    //------------------------------------------------------------------------------------------------------------------
+    // wait for long (>4ms) break in PPM to run rest of loop (runs every ~20ms)
+    if(channel > NO_OF_CHANNELS) {
+        // update receiver values
+        read_channels();  // takes ~6us to complete
         
-        // serial output
-        millisNow = millis();
-        if(millisNow - millisPrevious >= millisPerSerialOutput) {
-            Serial.print(fc_time);Serial.print("\t");Serial.print("\t");
-        
-            Serial.print(throttle);Serial.print("\t");
-            Serial.print(yaw);Serial.print("\t");
-            Serial.print(pitch);Serial.print("\t");
-            Serial.print(roll);Serial.print("\n");
-        
-            millisPrevious += millisPerSerialOutput;
-        }
+//        // serial output
+//        millisNow = millis();
+//        if(millisNow - millisPrevious >= millisPerSerialOutput) {
+//            Serial.print(fc_time);Serial.print("\t");Serial.print("\t");
+//        
+//            Serial.print(throttle);Serial.print("\t");
+//            Serial.print(yaw);Serial.print("\t");
+//            Serial.print(pitch);Serial.print("\t");
+//            Serial.print(roll);Serial.print("\t");
+//            Serial.print(aux_channel_1);Serial.print("\t");
+//            Serial.print(aux_channel_2);Serial.print("\t");
+//            Serial.print(aux_channel_3);Serial.print("\t");
+//            Serial.print(aux_channel_4);Serial.print("\t");Serial.print("\t");
+//
+//            Serial.print(front_left);Serial.print("\t");
+//            Serial.print(front_right);Serial.print("\t");
+//            Serial.print(back_left);Serial.print("\t");
+//            Serial.print(back_right);Serial.print("\n");
+//        
+//            millisPrevious += millisPerSerialOutput;
+//        }
     }
 }

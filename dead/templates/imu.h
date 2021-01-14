@@ -73,6 +73,12 @@ void Imu::configure_imu(void) {
     // setting SRD to 7 for a 125Hz output rate
     // mag fixed at 100Hz for SRD<=9, 8Hz for SRD>9
     imu_lib.setSrd(7); // gyro/accel/temp = 125Hz, mag = 100Hz
+//    imu_lib.setAccelCalX(bias, scaleFactor);  // set sensor calibrations from "imu_calibration.ino" sketch
+//    imu_lib.setAccelCalY(bias, scaleFactor);
+//    imu_lib.setAccelCalZ(bias, scaleFactor);
+//    imu_lib.setMagCalX(bias, scaleFactor);
+//    imu_lib.setMagCalY(bias, scaleFactor);
+//    imu_lib.setMagCalZ(bias, scaleFactor);
 }
 
 void Imu::calibrate_imu(void) {

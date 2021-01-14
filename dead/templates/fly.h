@@ -233,11 +233,11 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
 
     fq0y = q0_y;
     f_y0 = y[0];
-    f_y1 = y[0];
-    f_y2 = y[0];
-    f_y3 = y[0];
-    f_y4 = y[0];
-    f_y5 = y[0];
+    f_y1 = y[1];
+    f_y2 = y[2];
+    f_y3 = y[3];
+    f_y4 = y[4];
+    f_y5 = y[5];
 }
 
 #endif

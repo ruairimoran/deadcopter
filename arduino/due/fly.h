@@ -1,4 +1,4 @@
-// 2021-01-09 01:12:25.336454
+// 2021-01-09 14:18:50.899301
 
 #ifndef fly.h
 #define fly.h
@@ -135,9 +135,10 @@ class Fly {
     void set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
                             float y_negative1, float y_0, float y_1, float y_2,
                             float y_3, float y_4, float y_5);
-    void observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
-                             float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
-                             float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5);
+    void reset_integral(void);
+    void observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right);
+//                             float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
+//                             float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5);
 
 };
 
@@ -213,16 +214,26 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
     y[5] = y_5;
 }
 
-void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
-                              float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
-                              float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
+void Fly::reset_integral(void) {
+    // integral action
+    z[0] = 0.0f;
+    z[1] = 0.0f;
+    z[2] = 0.0f;
+    z[3] = 0.0f;
+    z[4] = 0.0f;
+    z[5] = 0.0f;
+}
+
+void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right) {
+//                              float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
+//                              float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
     // integral action
     z[0] += r[0] - y[0];
     z[1] += r[1] - y[1];
     z[2] += r[2] - y[2];
-    z[3] += r[3] - y[3];
-    z[4] += r[4] - y[4];
-    z[5] += r[5] - y[5];
+    z[3] -= y[3];  // r[3] always 0
+    z[4] -= y[4];  // r[4] always 0
+    z[5] -= y[5];  // r[5] always 0
     
 
     // find x and u equilibrium values
@@ -315,18 +326,18 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     
 
 
-    // testing outputs for serial print // to be deleted
-    f_u0 = throttle_and_u[1];
-    f_u1 = throttle_and_u[2];
-    f_u2 = throttle_and_u[3];
-
-    fq0y = q0_y;
-    f_y0 = y[0];
-    f_y1 = y[0];
-    f_y2 = y[0];
-    f_y3 = y[0];
-    f_y4 = y[0];
-    f_y5 = y[0];
+//    // testing outputs for serial print // to be deleted
+//    f_u0 = throttle_and_u[1];
+//    f_u1 = throttle_and_u[2];
+//    f_u2 = throttle_and_u[3];
+//
+//    fq0y = q0_y;
+//    f_y0 = y[0];
+//    f_y1 = y[1];
+//    f_y2 = y[2];
+//    f_y3 = y[3];
+//    f_y4 = y[4];
+//    f_y5 = y[5];
 }
 
 #endif
