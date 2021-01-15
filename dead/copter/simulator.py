@@ -105,12 +105,16 @@ class Simulator:
                  euler_angle_cache, euler_state_hat_cache,
                  state_cache, state_hat_cache,
                  ):
+        plt.rcParams.update({'font.size': 14})
+
         # plot euler angles cache
         plt.subplot(2, 2, 1)
         plt.plot(self.t_span, np.rad2deg(euler_angle_cache))
         plt.plot(self.t_span, np.rad2deg(euler_state_hat_cache), '--')
-        plt.title("euler angles  (degrees)")
+        plt.title("euler angles")
         plt.legend(["roll", "pitch", "yaw", "roll_estimate", "pitch_estimate", "yaw_estimate"], loc="upper right")
+        plt.ylabel("degrees")
+        plt.xlabel("time /s")
 
         # plot quaternion cache
         plt.subplot(2, 2, 2)
@@ -119,20 +123,26 @@ class Simulator:
         plt.title("quaternion")
         plt.legend(["q0", "q1", "q2", "q3", "q0_hat", "q1_hat", "q2_hat", "q3_hat"], loc="upper right")
         plt.ylim([-0.03, 0.03])
+        plt.ylabel("arbitrary")
+        plt.xlabel("time /s")
 
         # plot angular frequency cache
         plt.subplot(2, 2, 3)
         plt.plot(self.t_span, state_cache[:, 4:7])
         plt.plot(self.t_span, state_hat_cache[:, 4:7], '--')
-        plt.title("angular frequency")
+        plt.title("angular rotation")
         plt.legend(["w0", "w1", "w2", "w0_hat", "w1_hat", "w2_hat"], loc="upper right")
+        plt.ylabel("rad/s")
+        plt.xlabel("time /s")
 
         # plot rotation frequency cache
         plt.subplot(2, 2, 4)
         plt.plot(self.t_span, state_cache[:, 7:10])
         plt.plot(self.t_span, state_hat_cache[:, 7:10], '--')
-        plt.title("rotation frequency")
+        plt.title("spin frequency")
         plt.legend(["n0", "n1", "n2", "n0_hat", "n1_hat", "n2_hat"], loc="upper right")
+        plt.ylabel("arbitrary")
+        plt.xlabel("time /s")
 
         # show sub plots
         plt.get_current_fig_manager().full_screen_toggle()  # toggle full-screen mode, exit = Ctrl+F
