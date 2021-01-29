@@ -14,8 +14,7 @@ class Fly {
     float Ad[9][9] = {{discrete_A}};  // discrete A array
     float Bd[9][3] = {{discrete_B}};  // discrete B array
     float Cd[6][9] = {{discrete_C}};  // discrete C array
-    float K_x[3][9] = {{lqr_K_x_gain}};  // LQR gain for state control
-    float K_z[3][6] = {{lqr_K_z_gain}};  // LQR gain for integral action
+    float K[3][9] = {{lqr_gain}};  // LQR gain for state control
     float L[9][6] = {{kf_gain}};  // Kalman filter gain for minimising observation error
     float G[12][3] = {{equilibrium_G}};  // for calculating new equilibrium state and control action
 

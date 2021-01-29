@@ -27,13 +27,10 @@ class Receiver {
 
     public:
     Receiver();
-    int aux_channel_1 = 0;
-    int aux_channel_2 = 0;
-    int aux_channel_3 = 0;
-    int aux_channel_4 = 0;
     void ISR_read_ppm(void);
     int get_channel(void);
-    void read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw);
+    void read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw,
+                       int &rx_aux_1, int &rx_aux_2, int &rx_aux_3, int &rx_aux_4);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -61,16 +58,17 @@ int Receiver::get_channel(void) {
     return channel;
 }
 
-void Receiver::read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw) {
+void Receiver::read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw,
+                             int &rx_aux_1, int &rx_aux_2, int &rx_aux_3, int &rx_aux_4) {
     // reformat receiver values
-    rx_throttle = map(output_rx[{{throttle_channel}}], RECEIVER_MIN, RECEIVER_MAX, THROTTLE_MIN, THROTTLE_MAX);
-    rx_roll = map(output_rx[{{roll_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-    rx_pitch = map(output_rx[{{pitch_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-    rx_yaw = map(output_rx[{{rudder_channel}}], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-    aux_channel_1 = output_rx[5];
-    aux_channel_2 = output_rx[6];
-    aux_channel_3 = output_rx[7];
-    aux_channel_4 = output_rx[8];
+    rx_throttle = output_rx[{{throttle_channel}}];
+    rx_roll = output_rx[{{roll_channel}}];
+    rx_pitch = output_rx[{{pitch_channel}}];
+    rx_yaw = output_rx[{{rudder_channel}}];
+    rx_aux_1 = output_rx[5];
+    rx_aux_2 = output_rx[6];
+    rx_aux_3 = output_rx[7];
+    rx_aux_4 = output_rx[8];
 }
 
 #endif

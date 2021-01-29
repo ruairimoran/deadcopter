@@ -30,7 +30,7 @@ class Esc {
     void write_speed_to_esc(int rotor_speed_front_left, int rotor_speed_front_right, int rotor_speed_back_left, int rotor_speed_back_right);
     void disarm(void);
     void arm(void);
-    void get_arm_status(bool &esc_arm_status);
+    bool get_arm_status(void);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -64,8 +64,8 @@ void Esc::arm(void) {
     write_speed_to_esc(IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED);
 }
 
-void Esc::get_arm_status(bool &esc_arm_status) {
-    esc_arm_status = arm_status;
+bool Esc::get_arm_status(void) {
+    return arm_status;
 }
 
 #endif

@@ -1,5 +1,5 @@
 //  Deadcopter is learning. Stay tuned.
-// 2021-01-09 14:18:50.899301
+// 2021-01-29 16:54:27.284996
 
 // DueTimer Timers 0,2,3,4,5 unavailable due to use of Servo library
 #include <Arduino.h>
@@ -36,10 +36,10 @@ int due_front_right = 0;  // front right motor pwm
 int due_back_left = 0;  // back left motor pwm
 int due_back_right = 0;  // back right motor pwm
 
-//// for readings and timings // to be deleted
-//float _u0, _u1, _u2;
-//float q0y, _y0, _y1, _y2, _y3, _y4, _y5;
-unsigned long millisPerSerialOutput = 100;  // 500ms refresh rate
+// for readings and timings // to be deleted
+float _u0, _u1, _u2;
+float q0y, _y0, _y1, _y2, _y3, _y4, _y5;
+unsigned long millisPerSerialOutput = 500;  // 500ms refresh rate
 unsigned long millisNow = 0;
 unsigned long millisPrevious = 0;
 unsigned long imu_read_time_new = 0;
@@ -69,15 +69,15 @@ void setup() {
 void loop() {
 //----------------------------------------------------------------------------------------------------------------------
     // safety - if copter arm switch is off, make sure motors are disarmed
-    
+
     if((due_aux_channel_1 < 1500) && (due_motors.get_arm_status() == true)) {
         due_motors.disarm();  // if Tx arm switch Low and motors armed, disarm motors indefinitely
     }
-        
+
 //----------------------------------------------------------------------------------------------------------------------
     // poll imu interrupt pin for data ready
 
-    if(flag_flight_control == true) {  // control copter
+    if(flag_flight_control == true) {
         // make sure imu data is being read at correct sampling time
         imu_read_time_new = micros();
         imu_read_time_difference = imu_read_time_new - imu_read_time_old;
@@ -88,9 +88,9 @@ void loop() {
         // if copter is armed
         if(due_motors.get_arm_status()) {
             // setup y and r matrices for calculations in observe_and_control method
-            // due_controller.set_matrix_r_and_y(due_roll, due_pitch, due_yaw, due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
+            due_controller.set_matrix_r_and_y(due_roll, due_pitch, due_yaw, due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
             // compute control actions for each motor
-            // due_controller.observe_and_control(due_throttle, due_front_left, due_front_right, due_back_left, due_back_right); // _u0, _u1, _u2, q0y, _y0, _y1, _y2, _y3, _y4, _y5);
+            due_controller.observe_and_control(due_throttle, due_front_left, due_front_right, due_back_left, due_back_right, _u0, _u1, _u2, q0y, _y0, _y1, _y2, _y3, _y4, _y5);
             due_front_left = due_throttle;
             due_front_right = due_throttle;
             due_back_left = due_throttle;
@@ -109,7 +109,7 @@ void loop() {
     if(due_receiver.get_channel() > NO_OF_CHANNELS) {
     //------------------------------------------------------------------------------------------------------------------
         // get receiver control
-        
+
         due_receiver.read_channels(due_throttle, due_roll, due_pitch, due_yaw, due_aux_channel_1, due_aux_channel_2, due_aux_channel_3, due_aux_channel_4);
 
     //------------------------------------------------------------------------------------------------------------------
@@ -122,7 +122,6 @@ void loop() {
             due_arm_switch_status = false;  // stop motors from arming until throttle low and Tx arm switch has been toggled off first
         }
         if(due_motors.get_arm_status() == false && due_arm_switch_status == true && due_aux_channel_1 > 1500 && due_throttle < 1160) {
-            due_controller.reset_integral();  // reset integral action for each flight
             due_motors.arm();  // if Tx arm switch is High and went high while throttle was low, throttle is low and motors are disarmed
         }                      // then arm motors
 
@@ -133,17 +132,17 @@ void loop() {
         if(millisNow - millisPrevious >= millisPerSerialOutput) {
             Serial.print(imu_read_time_difference);Serial.print("\t");
 
-//            Serial.print(_u0, 7);Serial.print("\t");
-//            Serial.print(_u1, 7);Serial.print("\t");
-//            Serial.print(_u2, 7);Serial.print("\t");
-//
-//            Serial.print(q0y, 7);Serial.print("\t");
-//            Serial.print(_y0, 7);Serial.print("\t");
-//            Serial.print(_y1, 7);Serial.print("\t");
-//            Serial.print(_y2, 7);Serial.print("\t");
-//            Serial.print(_y3, 7);Serial.print("\t");
-//            Serial.print(_y4, 7);Serial.print("\t");
-//            Serial.print(_y5, 7);Serial.print("\t");
+           Serial.print(_u0, 7);Serial.print("\t");
+           Serial.print(_u1, 7);Serial.print("\t");
+           Serial.print(_u2, 7);Serial.print("\t");
+
+           Serial.print(q0y, 7);Serial.print("\t");
+           Serial.print(_y0, 7);Serial.print("\t");
+           Serial.print(_y1, 7);Serial.print("\t");
+           Serial.print(_y2, 7);Serial.print("\t");
+           Serial.print(_y3, 7);Serial.print("\t");
+           Serial.print(_y4, 7);Serial.print("\t");
+           Serial.print(_y5, 7);Serial.print("\t");
 
             Serial.print(due_motors.get_arm_status());Serial.print("\t");
             Serial.print(due_throttle);Serial.print("\t");

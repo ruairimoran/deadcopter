@@ -22,7 +22,7 @@ sampling_frequency = 125  # in Hz - sets refresh rate of ESCs
 sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=1/sampling_frequency)  # do not change
 
 # system design
-Ad, Bd, Cd, K_x, K_z, L, wide_G = sim.system_design(copter)  # wide_G has 6 columns
+Ad, Bd, Cd, K, L, wide_G = sim.system_design(copter)  # wide_G has 6 columns
 G = np.delete(wide_G, [3, 4, 5], 1)  # deletes last 3 columns of wide_G as last three elements of r are zeros
 
 
@@ -55,8 +55,7 @@ def reformat_matrix_to_array(python_matrix):
 _Ad = reformat_matrix_to_array(Ad)
 _Bd = reformat_matrix_to_array(Bd)
 _Cd = reformat_matrix_to_array(Cd)
-_K_x = reformat_matrix_to_array(K_x)
-_K_z = reformat_matrix_to_array(K_z)
+_K = reformat_matrix_to_array(K)
 _L = reformat_matrix_to_array(L)
 _G = reformat_matrix_to_array(G)
 
@@ -83,8 +82,7 @@ fly_output = fly_template.render(timestamp=timestamp,
                                  discrete_A=_Ad,
                                  discrete_B=_Bd,
                                  discrete_C=_Cd,
-                                 lqr_K_x_gain=_K_x,
-                                 lqr_K_z_gain=_K_z,
+                                 lqr_gain=_K,
                                  kf_gain=_L,
                                  equilibrium_G=_G)
 fly_output_path = "../../arduino/due/fly.h"

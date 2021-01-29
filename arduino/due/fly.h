@@ -1,4 +1,4 @@
-// 2021-01-09 14:18:50.899301
+// 2021-01-29 16:54:27.284996
 
 #ifndef fly.h
 #define fly.h
@@ -53,21 +53,12 @@ class Fly {
 {0.,0.,0.,1.,0.,0.,0.,0.,0.},
 {0.,0.,0.,0.,1.,0.,0.,0.,0.},
 {0.,0.,0.,0.,0.,1.,0.,0.,0.}};  // discrete C array
-    float K_x[3][9] = {{-3.23772498e+01, -0.00000000e+00, -0.00000000e+00, -1.34904149e+00
-,-0.00000000e+00, -0.00000000e+00, -8.73212276e-02, -0.00000000e+00
-,-0.00000000e+00},
- {-0.00000000e+00, -3.23429357e+01, -0.00000000e+00, -0.00000000e+00
-,-1.38136873e+00, -0.00000000e+00, -0.00000000e+00, -8.65884897e-02
-,-0.00000000e+00},
- {-0.00000000e+00, -0.00000000e+00, -3.41565261e+01, -0.00000000e+00
-,-0.00000000e+00, -1.73454726e+00, -0.00000000e+00, -0.00000000e+00
-, 1.19250669e-02}};  // LQR gain for state control
-    float K_z[3][6] = {{ 1.23039786e-01, -0.00000000e+00, -0.00000000e+00,2.07989862e-07
-,-0.00000000e+00, -0.00000000e+00},
- {-0.00000000e+00,1.22782364e-01, -0.00000000e+00, -0.00000000e+00
-, 2.67121096e-07, -0.00000000e+00},
- {-0.00000000e+00, -0.00000000e+00,1.28633938e-01, -0.00000000e+00
-,-0.00000000e+00,6.20727128e-08}};  // LQR gain for integral action
+    float K[3][9] = {{-4.01269115, -0.,,,,, -0.,,,,, -0.55734101, -0.,,,,, -0.
+,-0.08188965, -0.,,,,, -0.,,,,},
+ {-0.,,,,, -4.01956681, -0.,,,,, -0.,,,,, -0.56853465, -0.
+,-0.,,,,, -0.08173412, -0.,,,,},
+ {-0.,,,,, -0.,,,,, -3.15736584, -0.,,,,, -0.,,,,, -1.10181006
+,-0.,,,,, -0.,,,,, -0.01938401}};  // LQR gain for state control
     float L[9][6] = {{-6.18061118e-01, -0.00000000e+00, -0.00000000e+00, -3.02208972e-03
 ,-0.00000000e+00, -0.00000000e+00},
  {-0.00000000e+00, -6.18061114e-01, -0.00000000e+00, -0.00000000e+00
@@ -135,10 +126,9 @@ class Fly {
     void set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
                             float y_negative1, float y_0, float y_1, float y_2,
                             float y_3, float y_4, float y_5);
-    void reset_integral(void);
-    void observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right);
-//                             float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
-//                             float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5);
+    void observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
+                             float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
+                             float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5);
 
 };
 
@@ -214,26 +204,16 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
     y[5] = y_5;
 }
 
-void Fly::reset_integral(void) {
-    // integral action
-    z[0] = 0.0f;
-    z[1] = 0.0f;
-    z[2] = 0.0f;
-    z[3] = 0.0f;
-    z[4] = 0.0f;
-    z[5] = 0.0f;
-}
-
-void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right) {
-//                              float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
-//                              float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
+void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
+                              float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
+                              float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
     // integral action
     z[0] += r[0] - y[0];
     z[1] += r[1] - y[1];
     z[2] += r[2] - y[2];
-    z[3] -= y[3];  // r[3] always 0
-    z[4] -= y[4];  // r[4] always 0
-    z[5] -= y[5];  // r[5] always 0
+    z[3] += r[3] - y[3];
+    z[4] += r[4] - y[4];
+    z[5] += r[5] - y[5];
     
 
     // find x and u equilibrium values
@@ -326,18 +306,18 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     
 
 
-//    // testing outputs for serial print // to be deleted
-//    f_u0 = throttle_and_u[1];
-//    f_u1 = throttle_and_u[2];
-//    f_u2 = throttle_and_u[3];
-//
-//    fq0y = q0_y;
-//    f_y0 = y[0];
-//    f_y1 = y[1];
-//    f_y2 = y[2];
-//    f_y3 = y[3];
-//    f_y4 = y[4];
-//    f_y5 = y[5];
+    // testing outputs for serial print // to be deleted
+    f_u0 = throttle_and_u[1];
+    f_u1 = throttle_and_u[2];
+    f_u2 = throttle_and_u[3];
+
+    fq0y = q0_y;
+    f_y0 = y[0];
+    f_y1 = y[1];
+    f_y2 = y[2];
+    f_y3 = y[3];
+    f_y4 = y[4];
+    f_y5 = y[5];
 }
 
 #endif

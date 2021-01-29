@@ -9,7 +9,6 @@
 #include <math.h>
 
 #define SAMPLING_FREQUENCY {{sample_freq}}  // rate for reading imu
-#define IMU_INTERRUPT_PIN {{imu_int_pin}}  // interrupt pin to signal when imu data ready
 
 class Imu {
     private:
