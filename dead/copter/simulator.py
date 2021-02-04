@@ -61,7 +61,6 @@ class Simulator:
         euler_state_hat_cache = copter.euler_angles(state_hat[0:4])
 
         r = np.zeros(6, )
-        z = r
 
         for k in range(self.__num_simulation_points):
             if k > self.__num_simulation_points/2:

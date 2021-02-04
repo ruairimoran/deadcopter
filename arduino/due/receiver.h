@@ -1,4 +1,4 @@
-// 2021-01-29 16:54:27.284996
+// 2021-02-03 01:36:44.184673
 
 #ifndef receiver.h
 #define receiver.h
@@ -11,11 +11,8 @@
 #define FRAME_CHANGE 3500  // must be less than time between last pulse in one frame and first pulse in next frame,
                                             // but more than maximum time between any consecutive pulses in the same frame,
                                             // measured using "receiver_pulse_test_time.ino" in microseconds (default: 5000)
-#define RECEIVER_MIN 1070  // minimum pwm input from receiver channel
-#define RECEIVER_MAX 1930  // maximum pwm input from receiver channel
 #define THROTTLE_MIN 1150  // minimum throttle input
 #define THROTTLE_MAX 1850  // maximum throttle input
-#define ABSOLUTE_MAX_COPTER_ANGLE 30  // maximum angle the quadcopter can tilt from upright
 
 class Receiver {
     private:

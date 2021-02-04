@@ -11,11 +11,8 @@
 #define FRAME_CHANGE {{frame_change_time}}  // must be less than time between last pulse in one frame and first pulse in next frame,
                                             // but more than maximum time between any consecutive pulses in the same frame,
                                             // measured using "receiver_pulse_test_time.ino" in microseconds (default: 5000)
-#define RECEIVER_MIN {{min_receiver_pwm}}  // minimum pwm input from receiver channel
-#define RECEIVER_MAX {{max_receiver_pwm}}  // maximum pwm input from receiver channel
 #define THROTTLE_MIN {{min_throttle_pwm}}  // minimum throttle input
 #define THROTTLE_MAX {{max_throttle_pwm}}  // maximum throttle input
-#define ABSOLUTE_MAX_COPTER_ANGLE {{max_allowed_tilt_degrees}}  // maximum angle the quadcopter can tilt from upright
 
 class Receiver {
     private:

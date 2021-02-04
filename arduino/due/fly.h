@@ -1,4 +1,4 @@
-// 2021-01-29 16:54:27.284996
+// 2021-02-02 22:41:46.806268
 
 #ifndef fly.h
 #define fly.h
@@ -8,6 +8,11 @@
 #include <MadgwickAHRS.h>
 #include "imu.h"
 #include "receiver.h"
+
+#define RECEIVER_MIN 1065  // minimum pwm input from receiver channel
+#define RECEIVER_MAX 1925  // maximum pwm input from receiver channel
+#define THROTTLE_MAX 8  // (out of 10) max throttle to allow stability control at full throttle
+#define MAX_COPTER_ANGLE 10*DEG_TO_RAD  // maximum angle the quadcopter can tilt from upright
 
 class Fly {
     private:
@@ -53,12 +58,12 @@ class Fly {
 {0.,0.,0.,1.,0.,0.,0.,0.,0.},
 {0.,0.,0.,0.,1.,0.,0.,0.,0.},
 {0.,0.,0.,0.,0.,1.,0.,0.,0.}};  // discrete C array
-    float K[3][9] = {{-4.01269115, -0.,,,,, -0.,,,,, -0.55734101, -0.,,,,, -0.
-,-0.08188965, -0.,,,,, -0.,,,,},
- {-0.,,,,, -4.01956681, -0.,,,,, -0.,,,,, -0.56853465, -0.
-,-0.,,,,, -0.08173412, -0.,,,,},
- {-0.,,,,, -0.,,,,, -3.15736584, -0.,,,,, -0.,,,,, -1.10181006
-,-0.,,,,, -0.,,,,, -0.01938401}};  // LQR gain for state control
+    float K[3][9] = {{-4.15277828, -0., -0., -0.54630746, -0., -0.
+,-0.08133587, -0., -0.,},
+ {-0., -4.15954232, -0., -0., -0.55796944, -0.
+,-0., -0.08118701, -0.,},
+ {-0., -0., -4.24002618, -0., -0., -1.18246123
+,-0., -0., -0.01471668}};  // LQR gain for state control
     float L[9][6] = {{-6.18061118e-01, -0.00000000e+00, -0.00000000e+00, -3.02208972e-03
 ,-0.00000000e+00, -0.00000000e+00},
  {-0.00000000e+00, -6.18061114e-01, -0.00000000e+00, -0.00000000e+00
@@ -104,10 +109,10 @@ class Fly {
 
     // for formatting into output to motor
     float output_to_motor[4] = {0};  // motor pwm from calculations
-    float motor_proportions[4][4] = {{1.0, 1.0, -1.0, -1.0},
-                                     {1.0, -1.0, -1.0, 1.0},
-                                     {1.0, 1.0, 1.0, 1.0},
-                                     {1.0, -1.0, 1.0, -1.0}};  // motor_speeds = motor_proportions * throttle_and_control
+    float motor_proportions[4][4] = {{1.0, 1.0, -1.0, 1.0},
+                                     {1.0, -1.0, -1.0, -1.0},
+                                     {1.0, 1.0, 1.0, -1.0},
+                                     {1.0, -1.0, 1.0, 1.0}};  // motor_speeds = motor_proportions * throttle_and_control
 
     // for solving quaternion differences
     float solve_q0(float q1, float q2, float q3);
@@ -126,7 +131,7 @@ class Fly {
     void set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
                             float y_negative1, float y_0, float y_1, float y_2,
                             float y_3, float y_4, float y_5);
-    void observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
+    void observe_and_control(float fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
                              float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
                              float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5);
 
@@ -153,7 +158,7 @@ float invSqrt(float input) {
 
 float Fly::solve_q0(float q1, float q2, float q3) {
     // find q0 for unit quaternion
-    return sqrt(1 - pow(q1,2) - pow(q2,2) - pow(q3,2));
+    return sqrt(1.f - pow(q1,2.f) - pow(q2,2.f) - pow(q3,2.f));
 }
 
 float Fly::quaternion_difference(float w1, float x1, float y1, float z1,
@@ -173,13 +178,18 @@ float Fly::quaternion_difference(float w1, float x1, float y1, float z1,
 void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
                              float y_negative1, float y_0, float y_1, float y_2,
                              float y_3, float y_4, float y_5) {
+    // map rx input to degrees
+    float fly_roll_rad = (fly_roll - (float)RECEIVER_MIN) * ((float)MAX_COPTER_ANGLE + (float)MAX_COPTER_ANGLE) / ((float)RECEIVER_MAX - (float)RECEIVER_MIN) - (float)MAX_COPTER_ANGLE;
+    float fly_pitch_rad = (fly_pitch - (float)RECEIVER_MIN) * ((float)MAX_COPTER_ANGLE + (float)MAX_COPTER_ANGLE) / ((float)RECEIVER_MAX - (float)RECEIVER_MIN) - (float)MAX_COPTER_ANGLE;
+    float fly_yaw_rad = (fly_yaw - (float)RECEIVER_MIN) * ((float)MAX_COPTER_ANGLE + (float)MAX_COPTER_ANGLE) / ((float)RECEIVER_MAX - (float)RECEIVER_MIN) - (float)MAX_COPTER_ANGLE;
+
     // get input quaternion from receiver euler angles
-    float cy = cos(fly_yaw * 0.5f);
-    float sy = sin(fly_yaw * 0.5f);
-    float cp = cos(fly_pitch * 0.5f);
-    float sp = sin(fly_pitch * 0.5f);
-    float cr = cos(fly_roll * 0.5f);
-    float sr = sin(fly_roll * 0.5f);
+    float cy = cos(fly_yaw_rad * 0.5f);
+    float sy = sin(fly_yaw_rad * 0.5f);
+    float cp = cos(fly_pitch_rad * 0.5f);
+    float sp = sin(fly_pitch_rad * 0.5f);
+    float cr = cos(fly_roll_rad * 0.5f);
+    float sr = sin(fly_roll_rad * 0.5f);
     float rx_q0 = cr * cp * cy + sr * sp * sy;
     float rx_q1 = sr * cp * cy - cr * sp * sy;
     float rx_q2 = cr * sp * cy + sr * cp * sy;
@@ -190,9 +200,9 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
 	r[0] = rx_q1 * fly_reciprocalNorm;  // q1
 	r[1] = rx_q2 * fly_reciprocalNorm;  // q2
 	r[2] = rx_q3 * fly_reciprocalNorm;  // q3
-    r[3] = 0.0f;
-    r[4] = 0.0f;
-    r[5] = 0.0f;
+    r[3] = 0.f;
+    r[4] = 0.f;
+    r[5] = 0.f;
 
     // put imu values in y matrix
     q0_y = y_negative1;
@@ -204,18 +214,9 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
     y[5] = y_5;
 }
 
-void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
+void Fly::observe_and_control(float fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
                               float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
                               float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
-    // integral action
-    z[0] += r[0] - y[0];
-    z[1] += r[1] - y[1];
-    z[2] += r[2] - y[2];
-    z[3] += r[3] - y[3];
-    z[4] += r[4] - y[4];
-    z[5] += r[5] - y[5];
-    
-
     // find x and u equilibrium values
     r_short[0] = r[0];
     r_short[1] = r[1];
@@ -249,21 +250,21 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     
 
     // find control action matrix, u
-    throttle_and_u[1] = xu_e[9] + K_x[0][0]*x_diff[0] + K_x[0][1]*x_diff[1] + K_x[0][2]*x_diff[2] + K_x[0][3]*x_diff[3] + K_x[0][4]*x_diff[4] + K_x[0][5]*x_diff[5] + K_x[0][6]*x_diff[6] + K_x[0][7]*x_diff[7] + K_x[0][8]*x_diff[8] + K_z[0][0]*z[0] + K_z[0][1]*z[1] + K_z[0][2]*z[2] + K_z[0][3]*z[3] + K_z[0][4]*z[4] + K_z[0][5]*z[5];
-    throttle_and_u[2] = xu_e[10] + K_x[1][0]*x_diff[0] + K_x[1][1]*x_diff[1] + K_x[1][2]*x_diff[2] + K_x[1][3]*x_diff[3] + K_x[1][4]*x_diff[4] + K_x[1][5]*x_diff[5] + K_x[1][6]*x_diff[6] + K_x[1][7]*x_diff[7] + K_x[1][8]*x_diff[8] + K_z[1][0]*z[0] + K_z[1][1]*z[1] + K_z[1][2]*z[2] + K_z[1][3]*z[3] + K_z[1][4]*z[4] + K_z[1][5]*z[5];
-    throttle_and_u[3] = xu_e[11] + K_x[2][0]*x_diff[0] + K_x[2][1]*x_diff[1] + K_x[2][2]*x_diff[2] + K_x[2][3]*x_diff[3] + K_x[2][4]*x_diff[4] + K_x[2][5]*x_diff[5] + K_x[2][6]*x_diff[6] + K_x[2][7]*x_diff[7] + K_x[2][8]*x_diff[8] + K_z[2][0]*z[0] + K_z[2][1]*z[1] + K_z[2][2]*z[2] + K_z[2][3]*z[3] + K_z[2][4]*z[4] + K_z[2][5]*z[5];
+    throttle_and_u[1] = xu_e[9] + K[0][0]*x_diff[0] + K[0][1]*x_diff[1] + K[0][2]*x_diff[2] + K[0][3]*x_diff[3] + K[0][4]*x_diff[4] + K[0][5]*x_diff[5] + K[0][6]*x_diff[6] + K[0][7]*x_diff[7] + K[0][8]*x_diff[8];
+    throttle_and_u[2] = xu_e[10] + K[1][0]*x_diff[0] + K[1][1]*x_diff[1] + K[1][2]*x_diff[2] + K[1][3]*x_diff[3] + K[1][4]*x_diff[4] + K[1][5]*x_diff[5] + K[1][6]*x_diff[6] + K[1][7]*x_diff[7] + K[1][8]*x_diff[8];
+    throttle_and_u[3] = xu_e[11] + K[2][0]*x_diff[0] + K[2][1]*x_diff[1] + K[2][2]*x_diff[2] + K[2][3]*x_diff[3] + K[2][4]*x_diff[4] + K[2][5]*x_diff[5] + K[2][6]*x_diff[6] + K[2][7]*x_diff[7] + K[2][8]*x_diff[8];
     
 
     // format into control output for motors
-    throttle_and_u[0] = fly_throttle;  // form matrix of throttle on top of u
+    throttle_and_u[0] = (fly_throttle - (float)RECEIVER_MIN) * ((float)THROTTLE_MAX) / ((float)RECEIVER_MAX - (float)RECEIVER_MIN);  // form matrix of throttle on top of u;  // form matrix of throttle on top of u
     output_to_motor[0] = + motor_proportions[0][0]*throttle_and_u[0] + motor_proportions[0][1]*throttle_and_u[1] + motor_proportions[0][2]*throttle_and_u[2] + motor_proportions[0][3]*throttle_and_u[3];
     output_to_motor[1] = + motor_proportions[1][0]*throttle_and_u[0] + motor_proportions[1][1]*throttle_and_u[1] + motor_proportions[1][2]*throttle_and_u[2] + motor_proportions[1][3]*throttle_and_u[3];
     output_to_motor[2] = + motor_proportions[2][0]*throttle_and_u[0] + motor_proportions[2][1]*throttle_and_u[1] + motor_proportions[2][2]*throttle_and_u[2] + motor_proportions[2][3]*throttle_and_u[3];
     output_to_motor[3] = + motor_proportions[3][0]*throttle_and_u[0] + motor_proportions[3][1]*throttle_and_u[1] + motor_proportions[3][2]*throttle_and_u[2] + motor_proportions[3][3]*throttle_and_u[3];
-    fly_front_left = ceil(output_to_motor[0]);
-    fly_front_right = ceil(output_to_motor[1]);
-    fly_back_left = ceil(output_to_motor[2]);
-    fly_back_right = ceil(output_to_motor[3]);
+    fly_front_left = ceil(output_to_motor[0]*100.0f + 1000.0f);
+    fly_front_right = ceil(output_to_motor[1]*100.0f + 1000.0f);
+    fly_back_left = ceil(output_to_motor[2]*100.0f + 1000.0f);
+    fly_back_right = ceil(output_to_motor[3]*100.0f + 1000.0f);
 
     // find observed y_hat
     y_hat[0] = + Cd[0][0]*x_hat[0] + Cd[0][1]*x_hat[1] + Cd[0][2]*x_hat[2] + Cd[0][3]*x_hat[3] + Cd[0][4]*x_hat[4] + Cd[0][5]*x_hat[5] + Cd[0][6]*x_hat[6] + Cd[0][7]*x_hat[7] + Cd[0][8]*x_hat[8];
@@ -304,6 +305,27 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     x_hat[7] = + Ad[7][0]*x_hat_buffer[0] + Ad[7][1]*x_hat_buffer[1] + Ad[7][2]*x_hat_buffer[2] + Ad[7][3]*x_hat_buffer[3] + Ad[7][4]*x_hat_buffer[4] + Ad[7][5]*x_hat_buffer[5] + Ad[7][6]*x_hat_buffer[6] + Ad[7][7]*x_hat_buffer[7] + Ad[7][8]*x_hat_buffer[8] + Bd[7][0]*throttle_and_u[1] + Bd[7][1]*throttle_and_u[2] + Bd[7][2]*throttle_and_u[3] + L[7][0]*y_diff[0] + L[7][1]*y_diff[1] + L[7][2]*y_diff[2] + L[7][3]*y_diff[3] + L[7][4]*y_diff[4] + L[7][5]*y_diff[5];
     x_hat[8] = + Ad[8][0]*x_hat_buffer[0] + Ad[8][1]*x_hat_buffer[1] + Ad[8][2]*x_hat_buffer[2] + Ad[8][3]*x_hat_buffer[3] + Ad[8][4]*x_hat_buffer[4] + Ad[8][5]*x_hat_buffer[5] + Ad[8][6]*x_hat_buffer[6] + Ad[8][7]*x_hat_buffer[7] + Ad[8][8]*x_hat_buffer[8] + Bd[8][0]*throttle_and_u[1] + Bd[8][1]*throttle_and_u[2] + Bd[8][2]*throttle_and_u[3] + L[8][0]*y_diff[0] + L[8][1]*y_diff[1] + L[8][2]*y_diff[2] + L[8][3]*y_diff[3] + L[8][4]*y_diff[4] + L[8][5]*y_diff[5];
     
+
+    // if control action result is nan, reset x_hat and y_hat
+    if(isnan(throttle_and_u[1]) || isnan(throttle_and_u[2]) || isnan(throttle_and_u[3])) {
+        q0_x_hat = 1.0f;
+        x_hat[0] = 0.0f;
+        x_hat[1] = 0.0f;
+        x_hat[2] = 0.0f;
+        x_hat[3] = 0.0f;
+        x_hat[4] = 0.0f;
+        x_hat[5] = 0.0f;
+        x_hat[6] = 0.0f;
+        x_hat[7] = 0.0f;
+        x_hat[8] = 0.0f;
+        q0_y_hat = 1.0f;
+        y_hat[0] = 0.0f;
+        y_hat[1] = 0.0f;
+        y_hat[2] = 0.0f;
+        y_hat[3] = 0.0f;
+        y_hat[4] = 0.0f;
+        y_hat[5] = 0.0f;
+    }
 
 
     // testing outputs for serial print // to be deleted

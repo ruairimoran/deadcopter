@@ -1,5 +1,5 @@
 //  Deadcopter is learning. Stay tuned.
-// 2021-01-29 16:54:27.284996
+// 2021-02-02 22:41:46.806268
 
 // DueTimer Timers 0,2,3,4,5 unavailable due to use of Servo library
 #include <Arduino.h>
@@ -16,6 +16,7 @@ Esc due_motors;  // create receiver object from receiver.h
 
 bool flag_flight_control = false;  // for interrupt to tell loop to run flight control
 bool due_arm_switch_status = false;  // Tx arm switch status
+bool due_channels_updated = false;  // only allow channels to be read once each rx timeframe
 int due_throttle = 0;  // receiver throttle value
 int due_roll = 0;  // receiver roll value
 int due_pitch = 0;  // receiver pitch value
@@ -24,7 +25,7 @@ int due_aux_channel_1 = 0;  // receiver aux 1 value
 int due_aux_channel_2 = 0;  // receiver aux 2 value
 int due_aux_channel_3 = 0;  // receiver aux 3 value
 int due_aux_channel_4 = 0;  // receiver aux 4 value
-float due_y_negative1 = 0;  // imu q0
+float due_y_negative1 = 0.;  // imu q0
 float due_y_0 = 0;  // imu q1
 float due_y_1 = 0;  // imu q2
 float due_y_2 = 0;  // imu q3
@@ -68,13 +69,6 @@ void setup() {
 
 void loop() {
 //----------------------------------------------------------------------------------------------------------------------
-    // safety - if copter arm switch is off, make sure motors are disarmed
-
-    if((due_aux_channel_1 < 1500) && (due_motors.get_arm_status() == true)) {
-        due_motors.disarm();  // if Tx arm switch Low and motors armed, disarm motors indefinitely
-    }
-
-//----------------------------------------------------------------------------------------------------------------------
     // poll imu interrupt pin for data ready
 
     if(flag_flight_control == true) {
@@ -104,26 +98,35 @@ void loop() {
     }
 
 //----------------------------------------------------------------------------------------------------------------------
-    // wait for break in PPM - between reading channel NO_OF_CHANNELS and 1 - to run rest of loop, so runs every ~20ms
+    // after rx channel reader restarts, reset channels updated flag
 
-    if(due_receiver.get_channel() > NO_OF_CHANNELS) {
+    if((due_channels_updated == true) && (due_receiver.get_channel() < NO_OF_CHANNELS)) {
+        due_channels_updated = false;  // reset channels updated flag
+    }
+
+//----------------------------------------------------------------------------------------------------------------------
+    // wait for break in PPM - between reading channel NO_OF_CHANNELS and 1 - to run rest of loop ONCE, so runs every ~20ms
+
+    if((due_channels_updated == false) && (due_receiver.get_channel() > NO_OF_CHANNELS)) {
     //------------------------------------------------------------------------------------------------------------------
         // get receiver control
 
         due_receiver.read_channels(due_throttle, due_roll, due_pitch, due_yaw, due_aux_channel_1, due_aux_channel_2, due_aux_channel_3, due_aux_channel_4);
+        due_channels_updated = true;  // set channels updated flag
 
     //------------------------------------------------------------------------------------------------------------------
-        // arm motors with switch on aux_channel_1
+        // disarm motors when left stick held in bottom left
 
-        if(due_arm_switch_status == false && due_aux_channel_1 < 1500 && due_throttle < 1160) {
-            due_arm_switch_status = true;  // allow motors to arm
+        if((due_throttle < 1080) && (due_yaw < 1080) && (due_motors.get_arm_status() == true)) {
+            due_motors.disarm();  // disarm motors
         }
-        if(due_arm_switch_status == true && due_aux_channel_1 > 1500 && due_throttle > 1160) {
-            due_arm_switch_status = false;  // stop motors from arming until throttle low and Tx arm switch has been toggled off first
-        }
-        if(due_motors.get_arm_status() == false && due_arm_switch_status == true && due_aux_channel_1 > 1500 && due_throttle < 1160) {
-            due_motors.arm();  // if Tx arm switch is High and went high while throttle was low, throttle is low and motors are disarmed
-        }                      // then arm motors
+
+    //------------------------------------------------------------------------------------------------------------------
+        // arm motors with left stick held in bottom right
+
+        if((due_throttle < 1080) && (due_yaw > 1910) && (due_motors.get_arm_status() == false)) {
+            due_motors.arm();  // arm motors
+        }                      
 
     //------------------------------------------------------------------------------------------------------------------
         // to be deleted
@@ -140,9 +143,6 @@ void loop() {
            Serial.print(_y0, 7);Serial.print("\t");
            Serial.print(_y1, 7);Serial.print("\t");
            Serial.print(_y2, 7);Serial.print("\t");
-           Serial.print(_y3, 7);Serial.print("\t");
-           Serial.print(_y4, 7);Serial.print("\t");
-           Serial.print(_y5, 7);Serial.print("\t");
 
             Serial.print(due_motors.get_arm_status());Serial.print("\t");
             Serial.print(due_throttle);Serial.print("\t");

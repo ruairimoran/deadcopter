@@ -35,21 +35,30 @@ def reformat_matrix_to_array(python_matrix):
             .replace("]", "}")\
             .replace("  ", ",")\
             .replace(" -", ", -")\
-            .replace("}", "},", bracket_counter)
+            .replace("}", "},", bracket_counter)\
+            .replace(",,", ",")\
+            .replace(",,", ",")\
+            .replace(",,", ",")
     elif str(py_array_format).count("[-") > 0:                    # catch any other negatives in array
         bracket_counter = str(py_array_format).count("]") - 2
         return str(py_array_format).replace("[", "{")\
             .replace("]", "}")\
             .replace("  ", ",")\
             .replace(" -", ", -")\
-            .replace("}", "},", bracket_counter)
+            .replace("}", "},", bracket_counter)\
+            .replace(",,", ",")\
+            .replace(",,", ",")\
+            .replace(",,", ",")
     else:                                                         # for all positive arrays
         bracket_counter = str(py_array_format).count("]") - 2
         return str(py_array_format).replace("[", "{") \
             .replace("]", "}") \
             .replace(" ", ",") \
             .replace("}", "},", bracket_counter) \
-            .replace(",{", "{")
+            .replace(",{", "{")\
+            .replace(",,", ",")\
+            .replace(",,", ",")\
+            .replace(",,", ",")
 
 
 _Ad = reformat_matrix_to_array(Ad)
@@ -79,6 +88,9 @@ with open(due_output_path, "w") as fh:
 
 fly_template = env.get_template('fly.h')
 fly_output = fly_template.render(timestamp=timestamp,
+                                 receiver_min=1065.,
+                                 receiver_max=1925.,
+                                 max_angle=10.,
                                  discrete_A=_Ad,
                                  discrete_B=_Bd,
                                  discrete_C=_Cd,

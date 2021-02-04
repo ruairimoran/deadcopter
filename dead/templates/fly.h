@@ -9,6 +9,11 @@
 #include "imu.h"
 #include "receiver.h"
 
+#define RECEIVER_MIN {{receiver_min}}  // minimum pwm input from receiver channel
+#define RECEIVER_MAX {{receiver_max}}  // maximum pwm input from receiver channel
+#define THROTTLE_MAX 8  // (out of 10) max throttle to allow stability control at full throttle
+#define MAX_COPTER_ANGLE {{max_angle}}*DEG_TO_RAD  // maximum angle the quadcopter can tilt from upright
+
 class Fly {
     private:
     float Ad[9][9] = {{discrete_A}};  // discrete A array
@@ -29,13 +34,16 @@ class Fly {
     float xu_e[12] = {0};  // for equilibrium state
     float y_diff[6] = {0};  // for full y_hat - y
     float x_diff[9] = {0};  // for full x_hat - x_e
+    float fly_roll_rad = 0;  // map rx roll to degrees
+    float fly_pitch_rad = 0;  // map rx pitch to degrees
+    float fly_yaw_rad = 0;  // map rx yaw to degrees
 
     // for formatting into output to motor
     float output_to_motor[4] = {0};  // motor pwm from calculations
-    float motor_proportions[4][4] = {{ '{{' }}1.0, 1.0, {{ '-' }}1.0, {{ '-' }}1.0},
-                                     {1.0, {{ '-' }}1.0, {{ '-' }}1.0, 1.0},
-                                     {1.0, 1.0, 1.0, 1.0},
-                                     {1.0, {{ '-' }}1.0, 1.0, {{ '-' }}1.0{{ '}}' }};  // motor_speeds = motor_proportions * throttle_and_control
+    float motor_proportions[4][4] = {{ '{{' }}1.0, 1.0, {{ '-' }}1.0, 1.0},
+                                     {1.0, {{ '-' }}1.0, {{ '-' }}1.0, {{ '-' }}1.0},
+                                     {1.0, 1.0, 1.0, {{ '-' }}1.0},
+                                     {1.0, {{ '-' }}1.0, 1.0, 1.0{{ '}}' }};  // motor_speeds = motor_proportions * throttle_and_control
 
     // for solving quaternion differences
     float solve_q0(float q1, float q2, float q3);
@@ -101,13 +109,18 @@ float Fly::quaternion_difference(float w1, float x1, float y1, float z1,
 void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
                              float y_negative1, float y_0, float y_1, float y_2,
                              float y_3, float y_4, float y_5) {
+    // map rx input to degrees
+    fly_roll_rad = (fly_roll - RECEIVER_MIN) * (MAX_COPTER_ANGLE + MAX_COPTER_ANGLE) / (RECEIVER_MAX - RECEIVER_MIN) - MAX_COPTER_ANGLE;
+    fly_pitch_rad = (fly_pitch - RECEIVER_MIN) * (MAX_COPTER_ANGLE + MAX_COPTER_ANGLE) / (RECEIVER_MAX - RECEIVER_MIN) - MAX_COPTER_ANGLE;
+    fly_yaw_rad = (fly_yaw - RECEIVER_MIN) * (MAX_COPTER_ANGLE + MAX_COPTER_ANGLE) / (RECEIVER_MAX - RECEIVER_MIN) - MAX_COPTER_ANGLE;
+
     // get input quaternion from receiver euler angles
-    float cy = cos(fly_yaw * 0.5f);
-    float sy = sin(fly_yaw * 0.5f);
-    float cp = cos(fly_pitch * 0.5f);
-    float sp = sin(fly_pitch * 0.5f);
-    float cr = cos(fly_roll * 0.5f);
-    float sr = sin(fly_roll * 0.5f);
+    float cy = cos(fly_yaw_rad * 0.5f);
+    float sy = sin(fly_yaw_rad * 0.5f);
+    float cp = cos(fly_pitch_rad * 0.5f);
+    float sp = sin(fly_pitch_rad * 0.5f);
+    float cr = cos(fly_roll_rad * 0.5f);
+    float sr = sin(fly_roll_rad * 0.5f);
     float rx_q0 = cr * cp * cy + sr * sp * sy;
     float rx_q1 = sr * cp * cy - cr * sp * sy;
     float rx_q2 = cr * sp * cy + sr * cp * sy;
@@ -135,11 +148,6 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
 void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
                               float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
                               float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
-    // integral action
-    {% for count in range(6) -%}
-    z[{{count}}] += r[{{count}}] - y[{{count}}];
-    {% endfor %}
-
     // find x and u equilibrium values
     {% for count in range(3) -%}
     r_short[{{count}}] = r[{{count}}];
@@ -166,16 +174,13 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     {% for row in range(3) -%}
     throttle_and_u[{{row+1}}] = xu_e[{{row+9}}]
         {%- for col in range(9) -%}
-        {{' '}}+ K_x[{{row}}][{{col}}]*x_diff[{{col}}]
-        {%- endfor -%}
-        {%- for col in range(6) -%}
-        {{' '}}+ K_z[{{row}}][{{col}}]*z[{{col}}]
+        {{' '}}+ K[{{row}}][{{col}}]*x_diff[{{col}}]
         {%- endfor -%}
     ;
     {% endfor %}
 
     // format into control output for motors
-    throttle_and_u[0] = fly_throttle;  // form matrix of throttle on top of u
+    throttle_and_u[0] = (fly_throttle - RECEIVER_MIN) * (THROTTLE_MAX) / (RECEIVER_MAX - RECEIVER_MIN);  // form matrix of throttle on top of u;  // form matrix of throttle on top of u
     {% for row in range(4) -%}
     output_to_motor[{{row}}] =
         {%- for col in range(4) -%}
@@ -183,10 +188,10 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
         {%- endfor -%}
     ;
     {% endfor -%}
-    fly_front_left = ceil(output_to_motor[0]);
-    fly_front_right = ceil(output_to_motor[1]);
-    fly_back_left = ceil(output_to_motor[2]);
-    fly_back_right = ceil(output_to_motor[3]);
+    fly_front_left = ceil(output_to_motor[0]*100 + 1000);
+    fly_front_right = ceil(output_to_motor[1]*100 + 1000);
+    fly_back_left = ceil(output_to_motor[2]*100 + 1000);
+    fly_back_right = ceil(output_to_motor[3]*100 + 1000);
 
     // find observed y_hat
     {% for row in range(6) -%}
@@ -223,6 +228,27 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
         {%- endfor -%}
     ;
     {% endfor %}
+
+    // if control action result is nan, reset x_hat and y_hat
+    if(isnan(throttle_and_u[1]) || isnan(throttle_and_u[2]) || isnan(throttle_and_u[3])) {
+        q0_x_hat = 1.0f;
+        x_hat[0] = 0;
+        x_hat[1] = 0;
+        x_hat[2] = 0;
+        x_hat[3] = 0;
+        x_hat[4] = 0;
+        x_hat[5] = 0;
+        x_hat[6] = 0;
+        x_hat[7] = 0;
+        x_hat[8] = 0;
+        q0_y_hat = 1.0f;
+        y_hat[0] = 0;
+        y_hat[1] = 0;
+        y_hat[2] = 0;
+        y_hat[3] = 0;
+        y_hat[4] = 0;
+        y_hat[5] = 0;
+    }
 
 
     // testing outputs for serial print // to be deleted

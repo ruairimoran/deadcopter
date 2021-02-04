@@ -16,6 +16,7 @@ Esc due_motors;  // create receiver object from receiver.h
 
 bool flag_flight_control = false;  // for interrupt to tell loop to run flight control
 bool due_arm_switch_status = false;  // Tx arm switch status
+bool due_channels_updated = false;  // only allow channels to be read once each rx timeframe
 int due_throttle = 0;  // receiver throttle value
 int due_roll = 0;  // receiver roll value
 int due_pitch = 0;  // receiver pitch value
@@ -91,10 +92,6 @@ void loop() {
             due_controller.set_matrix_r_and_y(due_roll, due_pitch, due_yaw, due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
             // compute control actions for each motor
             due_controller.observe_and_control(due_throttle, due_front_left, due_front_right, due_back_left, due_back_right, _u0, _u1, _u2, q0y, _y0, _y1, _y2, _y3, _y4, _y5);
-            due_front_left = due_throttle;
-            due_front_right = due_throttle;
-            due_back_left = due_throttle;
-            due_back_right = due_throttle;
             // send control action to motor ESCs
             due_motors.write_speed_to_esc(due_front_left, due_front_right, due_back_left, due_back_right);
         }
@@ -104,13 +101,21 @@ void loop() {
     }
 
 //----------------------------------------------------------------------------------------------------------------------
-    // wait for break in PPM - between reading channel NO_OF_CHANNELS and 1 - to run rest of loop, so runs every ~20ms
+    // after rx channel reader restarts, reset channels updated flag
 
-    if(due_receiver.get_channel() > NO_OF_CHANNELS) {
+    if(due_receiver.get_channel() < NO_OF_CHANNELS) {
+        due_channels_updated = false;  // reset channels updated flag
+    }
+
+//----------------------------------------------------------------------------------------------------------------------
+    // wait for break in PPM - between reading channel NO_OF_CHANNELS and 1 - to run rest of loop ONCE, so runs every ~20ms
+
+    if((due_receiver.get_channel() > NO_OF_CHANNELS) && (due_channels_updated == false)) {
     //------------------------------------------------------------------------------------------------------------------
         // get receiver control
 
         due_receiver.read_channels(due_throttle, due_roll, due_pitch, due_yaw, due_aux_channel_1, due_aux_channel_2, due_aux_channel_3, due_aux_channel_4);
+        due_channels_updated = true;  // set channels updated flag
 
     //------------------------------------------------------------------------------------------------------------------
         // arm motors with switch on aux_channel_1
@@ -140,9 +145,6 @@ void loop() {
            Serial.print(_y0, 7);Serial.print("\t");
            Serial.print(_y1, 7);Serial.print("\t");
            Serial.print(_y2, 7);Serial.print("\t");
-           Serial.print(_y3, 7);Serial.print("\t");
-           Serial.print(_y4, 7);Serial.print("\t");
-           Serial.print(_y5, 7);Serial.print("\t");
 
             Serial.print(due_motors.get_arm_status());Serial.print("\t");
             Serial.print(due_throttle);Serial.print("\t");

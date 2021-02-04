@@ -1,4 +1,4 @@
-// 2021-01-29 16:54:27.284996
+// 2021-02-02 22:41:46.806268
 
 #ifndef actuators.h
 #define actuators.h
@@ -12,8 +12,8 @@
 #define BACK_RIGHT_ESC_PIN 5
 
 #define ZERO_ROTOR_SPEED 1000  // 1000
-#define IDLE_ROTOR_SPEED 1150  // 1150
-#define ABSOLUTE_MIN_PWM 1000  // 1000
+#define IDLE_ROTOR_SPEED 1130  // 1150
+#define ABSOLUTE_MIN_PWM 800  // 1000
 #define ABSOLUTE_MAX_PWM 2000  // 2000
 
 class Esc {
@@ -55,12 +55,12 @@ void Esc::write_speed_to_esc(int rotor_speed_front_left, int rotor_speed_front_r
 }
 
 void Esc::disarm(void) {
-    arm_status = 0;
+    arm_status = false;
     write_speed_to_esc(ZERO_ROTOR_SPEED, ZERO_ROTOR_SPEED, ZERO_ROTOR_SPEED, ZERO_ROTOR_SPEED);
 }
 
 void Esc::arm(void) {
-    arm_status = 1;
+    arm_status = true;
     write_speed_to_esc(IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED);
 }
 
