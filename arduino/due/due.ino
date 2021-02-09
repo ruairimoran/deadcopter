@@ -1,5 +1,5 @@
 //  Deadcopter is learning. Stay tuned.
-// 2021-02-08 22:38:10.212705
+// 2021-02-09 19:49:34.016066
 
 // DueTimer Timers 0,2,3,4,5 unavailable due to use of Servo library
 #include <Arduino.h>
@@ -8,6 +8,8 @@
 #include "imu.h"
 #include "fly.h"
 #include "actuators.h"
+
+#define BUZZ_PIN 22
 
 Receiver due_receiver;  // create receiver object from receiver.h
 Imu due_imu;  // create imu object from imu.h
@@ -57,9 +59,6 @@ unsigned long imu_read_time_difference = 0;
 
 void get_ISR_read_ppm() {
     due_receiver.ISR_read_ppm();  // cannot call function directly from interrupt setup
-    imu_read_time_new = micros();
-        imu_read_time_difference = imu_read_time_new - imu_read_time_old;
-        imu_read_time_old = imu_read_time_new;
 }
 
 void ISR_flight_control() {
@@ -68,14 +67,13 @@ void ISR_flight_control() {
 }
 
 void setup() {
+    pinMode(BUZZ_PIN, OUTPUT);
     due_imu.configure_imu_and_madgwick();  // start communication with imu with madgwick filter
     due_motors.attach_esc_to_pwm_pin();
     due_motors.disarm();
     attachInterrupt(digitalPinToInterrupt(RX_PIN), get_ISR_read_ppm, RISING);  // enable receiver ppm interrupt
-    delayMicroseconds(100000);
     Timer6.attachInterrupt(ISR_flight_control).setFrequency(SAMPLING_FREQUENCY).start();  // read imu data at SAMPLING_FREQUENCY
-    delayMicroseconds(100000);
-    
+
     // for serial output // to be deleted
     Serial.begin(115200);
 }
@@ -85,17 +83,17 @@ void loop() {
     // poll imu interrupt pin for data ready
 
     if(flag_flight_control == true) {
-        // count 10 runs of function - makes 80ms timer
+        // count 5 runs of function - makes 40ms timer
         fc_count += 1;
-        if(fc_count > 10) {
+        if(fc_count > 5) {
             flag_channels_updated = false;
             fc_count = 0;
         }
 
         // make sure imu data is being read at correct sampling time
-//        imu_read_time_new = micros();
-//        imu_read_time_difference = imu_read_time_new - imu_read_time_old;
-//        imu_read_time_old = imu_read_time_new;
+        imu_read_time_new = micros();
+        imu_read_time_difference = imu_read_time_new - imu_read_time_old;
+        imu_read_time_old = imu_read_time_new;
 
         // get imu values
         due_imu.update_imu_data(due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
@@ -118,14 +116,13 @@ void loop() {
     }
 
 //----------------------------------------------------------------------------------------------------------------------
-    // "clean up" code - wait for break in PPM and only allowed to run during every other 40ms
+    // "clean up" code - wait for break in PPM and only allowed to run once every 40ms
 
     if((flag_channels_updated == false) && (due_receiver.get_channel() > NO_OF_CHANNELS)) {
-      
     //------------------------------------------------------------------------------------------------------------------
-        
+
         flag_channels_updated = true;  // set channels updated flag
-        
+
     //------------------------------------------------------------------------------------------------------------------
         // get receiver control
 
@@ -143,6 +140,15 @@ void loop() {
 
         if((due_throttle < 1080) && (due_yaw > 1910) && (due_motors.get_arm_status() == false)) {
             due_motors.arm();  // arm motors
+        }
+
+    //------------------------------------------------------------------------------------------------------------------
+        // sound buzzer if imu reading slows down
+        if(imu_read_time_difference > (1000 + 1.0e+6/(float) SAMPLING_FREQUENCY)) {
+            digitalWrite(BUZZ_PIN, HIGH);
+        }
+        else {
+            digitalWrite(BUZZ_PIN, LOW);
         }
 
     //------------------------------------------------------------------------------------------------------------------

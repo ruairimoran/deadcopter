@@ -78,7 +78,8 @@ env = jinja2.Environment(loader=file_loader, autoescape=True)
 # create "due.ino" from template
 
 due_template = env.get_template('due.ino')
-due_output = due_template.render(timestamp=timestamp)
+due_output = due_template.render(timestamp=timestamp,
+                                 buzzer_pin=22)
 due_output_path = "../../arduino/due/due.ino"
 with open(due_output_path, "w") as fh:
     fh.write(due_output)

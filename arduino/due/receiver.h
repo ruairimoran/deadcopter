@@ -1,4 +1,4 @@
-// 2021-02-08 22:38:10.212705
+// 2021-02-09 19:49:34.016066
 
 #ifndef receiver.h
 #define receiver.h
@@ -42,7 +42,7 @@ void Receiver::ISR_read_ppm(void) {
         channel = 1;  // therefore the next pulse time read will be channel 1
     }
     else {
-        if(channel < NO_OF_CHANNELS+1) {  // PPM signals only valid between 900 and 2100us
+        if((900 < time_difference) && (time_difference < 2100) && (channel < NO_OF_CHANNELS+1)) {  // PPM signals only valid between 900 and 2100us
             output_rx[channel] = time_difference;  // set channel value
         }
         channel += 1;  // next interrupt will calculate next channel
