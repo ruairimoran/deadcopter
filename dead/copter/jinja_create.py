@@ -88,9 +88,9 @@ with open(due_output_path, "w") as fh:
 
 fly_template = env.get_template('fly.h')
 fly_output = fly_template.render(timestamp=timestamp,
-                                 receiver_min=1065.,
-                                 receiver_max=1925.,
-                                 max_angle=10.,
+                                 receiver_min=1065,
+                                 receiver_max=1925,
+                                 max_angle=10,
                                  discrete_A=_Ad,
                                  discrete_B=_Bd,
                                  discrete_C=_Cd,
@@ -144,8 +144,8 @@ actuators_output = actuators_template.render(timestamp=timestamp,
                                              back_left_pin=4,
                                              back_right_pin=5,
                                              zero_thrust_pwm=1000,
-                                             idle_thrust_pwm=1150,
-                                             absolute_min_pwm_value=1000,
+                                             idle_thrust_pwm=1130,
+                                             absolute_min_pwm_value=800,
                                              absolute_max_pwm_value=2000,
                                              servo_range_min=0,
                                              servo_range_max=180)

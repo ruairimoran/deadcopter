@@ -1,4 +1,4 @@
-// 2021-02-02 22:41:46.806268
+// 2021-02-08 22:38:10.212705
 
 #ifndef fly.h
 #define fly.h
@@ -106,6 +106,9 @@ class Fly {
     float xu_e[12] = {0};  // for equilibrium state
     float y_diff[6] = {0};  // for full y_hat - y
     float x_diff[9] = {0};  // for full x_hat - x_e
+    float fly_roll_rad = 0;  // map rx roll to degrees
+    float fly_pitch_rad = 0;  // map rx pitch to degrees
+    float fly_yaw_rad = 0;  // map rx yaw to degrees
 
     // for formatting into output to motor
     float output_to_motor[4] = {0};  // motor pwm from calculations
@@ -131,7 +134,7 @@ class Fly {
     void set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
                             float y_negative1, float y_0, float y_1, float y_2,
                             float y_3, float y_4, float y_5);
-    void observe_and_control(float fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
+    void observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
                              float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
                              float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5);
 
@@ -158,7 +161,7 @@ float invSqrt(float input) {
 
 float Fly::solve_q0(float q1, float q2, float q3) {
     // find q0 for unit quaternion
-    return sqrt(1.f - pow(q1,2.f) - pow(q2,2.f) - pow(q3,2.f));
+    return sqrt(1.0f - pow(q1,2.0f) - pow(q2,2.0f) - pow(q3,2.0f));
 }
 
 float Fly::quaternion_difference(float w1, float x1, float y1, float z1,
@@ -179,9 +182,9 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
                              float y_negative1, float y_0, float y_1, float y_2,
                              float y_3, float y_4, float y_5) {
     // map rx input to degrees
-    float fly_roll_rad = (fly_roll - (float)RECEIVER_MIN) * ((float)MAX_COPTER_ANGLE + (float)MAX_COPTER_ANGLE) / ((float)RECEIVER_MAX - (float)RECEIVER_MIN) - (float)MAX_COPTER_ANGLE;
-    float fly_pitch_rad = (fly_pitch - (float)RECEIVER_MIN) * ((float)MAX_COPTER_ANGLE + (float)MAX_COPTER_ANGLE) / ((float)RECEIVER_MAX - (float)RECEIVER_MIN) - (float)MAX_COPTER_ANGLE;
-    float fly_yaw_rad = (fly_yaw - (float)RECEIVER_MIN) * ((float)MAX_COPTER_ANGLE + (float)MAX_COPTER_ANGLE) / ((float)RECEIVER_MAX - (float)RECEIVER_MIN) - (float)MAX_COPTER_ANGLE;
+    fly_roll_rad = (fly_roll - (float) RECEIVER_MIN) * ((float) MAX_COPTER_ANGLE + (float) MAX_COPTER_ANGLE) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN) - (float) MAX_COPTER_ANGLE;
+    fly_pitch_rad = (fly_pitch - (float) RECEIVER_MIN) * ((float) MAX_COPTER_ANGLE + (float) MAX_COPTER_ANGLE) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN) - (float) MAX_COPTER_ANGLE;
+    fly_yaw_rad = (fly_yaw - (float) RECEIVER_MIN) * ((float) MAX_COPTER_ANGLE + (float) MAX_COPTER_ANGLE) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN) - (float) MAX_COPTER_ANGLE;
 
     // get input quaternion from receiver euler angles
     float cy = cos(fly_yaw_rad * 0.5f);
@@ -200,9 +203,9 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
 	r[0] = rx_q1 * fly_reciprocalNorm;  // q1
 	r[1] = rx_q2 * fly_reciprocalNorm;  // q2
 	r[2] = rx_q3 * fly_reciprocalNorm;  // q3
-    r[3] = 0.f;
-    r[4] = 0.f;
-    r[5] = 0.f;
+    r[3] = 0.0f;
+    r[4] = 0.0f;
+    r[5] = 0.0f;
 
     // put imu values in y matrix
     q0_y = y_negative1;
@@ -214,7 +217,7 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
     y[5] = y_5;
 }
 
-void Fly::observe_and_control(float fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
+void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
                               float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
                               float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
     // find x and u equilibrium values
@@ -256,7 +259,7 @@ void Fly::observe_and_control(float fly_throttle, int &fly_front_left, int &fly_
     
 
     // format into control output for motors
-    throttle_and_u[0] = (fly_throttle - (float)RECEIVER_MIN) * ((float)THROTTLE_MAX) / ((float)RECEIVER_MAX - (float)RECEIVER_MIN);  // form matrix of throttle on top of u;  // form matrix of throttle on top of u
+    throttle_and_u[0] = (fly_throttle - (float) RECEIVER_MIN) * ((float) THROTTLE_MAX) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN);  // form matrix of throttle on top of u;  // form matrix of throttle on top of u
     output_to_motor[0] = + motor_proportions[0][0]*throttle_and_u[0] + motor_proportions[0][1]*throttle_and_u[1] + motor_proportions[0][2]*throttle_and_u[2] + motor_proportions[0][3]*throttle_and_u[3];
     output_to_motor[1] = + motor_proportions[1][0]*throttle_and_u[0] + motor_proportions[1][1]*throttle_and_u[1] + motor_proportions[1][2]*throttle_and_u[2] + motor_proportions[1][3]*throttle_and_u[3];
     output_to_motor[2] = + motor_proportions[2][0]*throttle_and_u[0] + motor_proportions[2][1]*throttle_and_u[1] + motor_proportions[2][2]*throttle_and_u[2] + motor_proportions[2][3]*throttle_and_u[3];

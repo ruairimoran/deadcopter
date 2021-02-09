@@ -11,8 +11,6 @@
 #define FRAME_CHANGE {{frame_change_time}}  // must be less than time between last pulse in one frame and first pulse in next frame,
                                             // but more than maximum time between any consecutive pulses in the same frame,
                                             // measured using "receiver_pulse_test_time.ino" in microseconds (default: 5000)
-#define THROTTLE_MIN {{min_throttle_pwm}}  // minimum throttle input
-#define THROTTLE_MAX {{max_throttle_pwm}}  // maximum throttle input
 
 class Receiver {
     private:

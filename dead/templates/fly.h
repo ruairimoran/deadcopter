@@ -89,7 +89,7 @@ float invSqrt(float input) {
 
 float Fly::solve_q0(float q1, float q2, float q3) {
     // find q0 for unit quaternion
-    return sqrt(1 - pow(q1,2) - pow(q2,2) - pow(q3,2));
+    return sqrt(1.0f - pow(q1,2.0f) - pow(q2,2.0f) - pow(q3,2.0f));
 }
 
 float Fly::quaternion_difference(float w1, float x1, float y1, float z1,
@@ -110,9 +110,9 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
                              float y_negative1, float y_0, float y_1, float y_2,
                              float y_3, float y_4, float y_5) {
     // map rx input to degrees
-    fly_roll_rad = (fly_roll - RECEIVER_MIN) * (MAX_COPTER_ANGLE + MAX_COPTER_ANGLE) / (RECEIVER_MAX - RECEIVER_MIN) - MAX_COPTER_ANGLE;
-    fly_pitch_rad = (fly_pitch - RECEIVER_MIN) * (MAX_COPTER_ANGLE + MAX_COPTER_ANGLE) / (RECEIVER_MAX - RECEIVER_MIN) - MAX_COPTER_ANGLE;
-    fly_yaw_rad = (fly_yaw - RECEIVER_MIN) * (MAX_COPTER_ANGLE + MAX_COPTER_ANGLE) / (RECEIVER_MAX - RECEIVER_MIN) - MAX_COPTER_ANGLE;
+    fly_roll_rad = (fly_roll - (float) RECEIVER_MIN) * ((float) MAX_COPTER_ANGLE + (float) MAX_COPTER_ANGLE) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN) - (float) MAX_COPTER_ANGLE;
+    fly_pitch_rad = (fly_pitch - (float) RECEIVER_MIN) * ((float) MAX_COPTER_ANGLE + (float) MAX_COPTER_ANGLE) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN) - (float) MAX_COPTER_ANGLE;
+    fly_yaw_rad = (fly_yaw - (float) RECEIVER_MIN) * ((float) MAX_COPTER_ANGLE + (float) MAX_COPTER_ANGLE) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN) - (float) MAX_COPTER_ANGLE;
 
     // get input quaternion from receiver euler angles
     float cy = cos(fly_yaw_rad * 0.5f);
@@ -180,7 +180,7 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     {% endfor %}
 
     // format into control output for motors
-    throttle_and_u[0] = (fly_throttle - RECEIVER_MIN) * (THROTTLE_MAX) / (RECEIVER_MAX - RECEIVER_MIN);  // form matrix of throttle on top of u;  // form matrix of throttle on top of u
+    throttle_and_u[0] = (fly_throttle - (float) RECEIVER_MIN) * ((float) THROTTLE_MAX) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN);  // form matrix of throttle on top of u;  // form matrix of throttle on top of u
     {% for row in range(4) -%}
     output_to_motor[{{row}}] =
         {%- for col in range(4) -%}
@@ -188,10 +188,10 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
         {%- endfor -%}
     ;
     {% endfor -%}
-    fly_front_left = ceil(output_to_motor[0]*100 + 1000);
-    fly_front_right = ceil(output_to_motor[1]*100 + 1000);
-    fly_back_left = ceil(output_to_motor[2]*100 + 1000);
-    fly_back_right = ceil(output_to_motor[3]*100 + 1000);
+    fly_front_left = ceil(output_to_motor[0]*100.0f + 1000.0f);
+    fly_front_right = ceil(output_to_motor[1]*100.0f + 1000.0f);
+    fly_back_left = ceil(output_to_motor[2]*100.0f + 1000.0f);
+    fly_back_right = ceil(output_to_motor[3]*100.0f + 1000.0f);
 
     // find observed y_hat
     {% for row in range(6) -%}
@@ -232,22 +232,22 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     // if control action result is nan, reset x_hat and y_hat
     if(isnan(throttle_and_u[1]) || isnan(throttle_and_u[2]) || isnan(throttle_and_u[3])) {
         q0_x_hat = 1.0f;
-        x_hat[0] = 0;
-        x_hat[1] = 0;
-        x_hat[2] = 0;
-        x_hat[3] = 0;
-        x_hat[4] = 0;
-        x_hat[5] = 0;
-        x_hat[6] = 0;
-        x_hat[7] = 0;
-        x_hat[8] = 0;
+        x_hat[0] = 0.0f;
+        x_hat[1] = 0.0f;
+        x_hat[2] = 0.0f;
+        x_hat[3] = 0.0f;
+        x_hat[4] = 0.0f;
+        x_hat[5] = 0.0f;
+        x_hat[6] = 0.0f;
+        x_hat[7] = 0.0f;
+        x_hat[8] = 0.0f;
         q0_y_hat = 1.0f;
-        y_hat[0] = 0;
-        y_hat[1] = 0;
-        y_hat[2] = 0;
-        y_hat[3] = 0;
-        y_hat[4] = 0;
-        y_hat[5] = 0;
+        y_hat[0] = 0.0f;
+        y_hat[1] = 0.0f;
+        y_hat[2] = 0.0f;
+        y_hat[3] = 0.0f;
+        y_hat[4] = 0.0f;
+        y_hat[5] = 0.0f;
     }
 
 

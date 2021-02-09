@@ -12,8 +12,8 @@
 #define BACK_RIGHT_ESC_PIN {{back_right_pin}}
 
 #define ZERO_ROTOR_SPEED {{zero_thrust_pwm}}  // 1000
-#define IDLE_ROTOR_SPEED {{idle_thrust_pwm}}  // 1150
-#define ABSOLUTE_MIN_PWM {{absolute_min_pwm_value}}  // 1000
+#define IDLE_ROTOR_SPEED {{idle_thrust_pwm}}  // 1130
+#define ABSOLUTE_MIN_PWM {{absolute_min_pwm_value}}  // 800
 #define ABSOLUTE_MAX_PWM {{absolute_max_pwm_value}}  // 2000
 
 class Esc {

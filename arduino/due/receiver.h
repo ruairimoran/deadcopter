@@ -1,4 +1,4 @@
-// 2021-02-03 01:36:44.184673
+// 2021-02-08 22:38:10.212705
 
 #ifndef receiver.h
 #define receiver.h
@@ -11,8 +11,6 @@
 #define FRAME_CHANGE 3500  // must be less than time between last pulse in one frame and first pulse in next frame,
                                             // but more than maximum time between any consecutive pulses in the same frame,
                                             // measured using "receiver_pulse_test_time.ino" in microseconds (default: 5000)
-#define THROTTLE_MIN 1150  // minimum throttle input
-#define THROTTLE_MAX 1850  // maximum throttle input
 
 class Receiver {
     private:
@@ -44,7 +42,7 @@ void Receiver::ISR_read_ppm(void) {
         channel = 1;  // therefore the next pulse time read will be channel 1
     }
     else {
-        if((900 < time_difference) && (time_difference < 2100) && (channel < NO_OF_CHANNELS+1)) {  // PPM signals only valid between 900 and 2100us
+        if(channel < NO_OF_CHANNELS+1) {  // PPM signals only valid between 900 and 2100us
             output_rx[channel] = time_difference;  // set channel value
         }
         channel += 1;  // next interrupt will calculate next channel
