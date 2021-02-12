@@ -100,13 +100,13 @@ class DeadCopter:
             raise Exception(f"System not observable. Obsv Matrix Rank ({obsv_rank}) < Measured States ({n})")
 
     def LQR(self, a, b):  # 125 Hz
-        Q_lqr = np.diagflat([2000, 2000, 2000, 10, 10, 10, 1, 1, 1])  # a.shape[0]
-        R_lqr = np.diagflat([1, 1, 1])  # b.shape[1]
+        Q_lqr = np.diagflat([2000, 2000, 1200, 10, 10, 10, 1, 1, 1])  # a.shape[0]
+        R_lqr = np.diagflat([1, 1, 50])  # b.shape[1]
         solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(a, b, Q_lqr, R_lqr)
         return -negative_gain_K_lqr
 
     def Kf(self, a, c):
-        Q_Kf = np.diagflat([100, 100, 100, 1000, 1000, 1000, 1000, 1000, 1000])  # a.shape[0]
+        Q_Kf = np.diagflat([100, 100, 100, 800, 800, 800, 10, 10, 10])  # a.shape[0]
         R_Kf = np.diagflat([100, 100, 100, 800, 800, 800])  # c.shape[0]
         solution_P_Kf, eigenvalues_cl_Kf, negative_gain_L_Kf = C.dare(a.T, c.T, Q_Kf, R_Kf)
         return -negative_gain_L_Kf.T
