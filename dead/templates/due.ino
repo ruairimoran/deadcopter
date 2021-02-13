@@ -103,10 +103,10 @@ void loop() {
             due_controller.set_matrix_r_and_y(due_roll, due_pitch, due_yaw, due_y_negative1, due_y_0, due_y_1, due_y_2, due_y_3, due_y_4, due_y_5);
             // compute control actions for each motor
             due_controller.observe_and_control(due_throttle, due_front_left, due_front_right, due_back_left, due_back_right, _u0, _u1, _u2, q0y, _y0, _y1, _y2, _y3, _y4, _y5);
-            due_front_left = due_throttle;
-            due_front_right = due_throttle;
-            due_back_left = due_throttle;
-            due_back_right = due_throttle;
+//             due_front_left = due_throttle;
+//             due_front_right = due_throttle;
+//             due_back_left = due_throttle;
+//             due_back_right = due_throttle;
             // send control action to motor ESCs
             due_motors.write_speed_to_esc(due_front_left, due_front_right, due_back_left, due_back_right);
         }
