@@ -1,4 +1,4 @@
-// 2021-02-12 16:03:45.662586
+// 2021-03-01 23:08:44.218308
 
 #ifndef imu.h
 #define imu.h
@@ -22,9 +22,9 @@ class Imu {
     float gx = 0;  // gyro x
     float gy = 0;  // gyro y
     float gz = 0;  // gyro z
-    float mx = 0;  // magnetometer x
-    float my = 0;  // magnetometer y
-    float mz = 0;  // magnetometer z
+    // float mx = 0;  // magnetometer x
+    // float my = 0;  // magnetometer y
+    // float mz = 0;  // magnetometer z
     // float temp = 0;  // imu temperature
     void configure_imu(void);
     void configure_madgwick_lib(void);
@@ -55,7 +55,7 @@ void Imu::configure_imu_and_madgwick(void) {
 void Imu::configure_madgwick_lib(void) {
     madgwick_lib.begin(SAMPLING_FREQUENCY);
     // edited MadgwickAHRS.cpp to allow gain (beta) to be set from sketch
-    madgwick_lib.set_beta(1.0f);  // set filter gain
+    madgwick_lib.set_beta(0.7f);  // set filter gain
 }
 
 void Imu::configure_imu(void) {
@@ -112,15 +112,15 @@ void Imu::update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1
     gx = imu_lib.getGyroX_rads();
     gy = imu_lib.getGyroY_rads();
     gz = imu_lib.getGyroZ_rads();
-    mx = imu_lib.getMagX_uT();
-    my = imu_lib.getMagY_uT();
-    mz = imu_lib.getMagZ_uT();
+    // mx = imu_lib.getMagX_uT();
+    // my = imu_lib.getMagY_uT();
+    // mz = imu_lib.getMagZ_uT();
     // temp = imu_lib.getTemperature_C();
 
     // edited MadgwickAHRS.cpp to stop it converting g from deg to rad
-    madgwick_lib.update(gx, gy, gz, ax, ay, az, mx, my, mz, imu_y_negative1, imu_y_0, imu_y_1, imu_y_2);
-    imu_y_3 = gx;
-    imu_y_4 = gy;
+    madgwick_lib.updateIMU(gy, -gx, gz, ay, -ax, az, imu_y_negative1, imu_y_0, imu_y_1, imu_y_2);
+    imu_y_3 = gy;
+    imu_y_4 = -gx;
     imu_y_5 = gz;
 }
 

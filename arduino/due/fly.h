@@ -1,4 +1,4 @@
-// 2021-02-12 16:03:45.662586
+// 2021-03-01 23:08:44.218308
 
 #ifndef fly.h
 #define fly.h
@@ -113,8 +113,8 @@ class Fly {
     // for formatting into output to motor
     float output_to_motor[4] = {0};  // motor pwm from calculations
     float motor_proportions[4][4] = {{1.0, 1.0, -1.0, 1.0},
-                                     {1.0, -1.0, -1.0, -1.0},
                                      {1.0, 1.0, 1.0, -1.0},
+                                     {1.0, -1.0, -1.0, -1.0},
                                      {1.0, -1.0, 1.0, 1.0}};  // motor_speeds = motor_proportions * throttle_and_control
 
     // for solving quaternion differences
