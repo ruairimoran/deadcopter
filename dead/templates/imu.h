@@ -118,9 +118,9 @@ void Imu::update_imu_data(float &imu_y_negative1, float &imu_y_0, float &imu_y_1
     // temp = imu_lib.getTemperature_C();
 
     // edited MadgwickAHRS.cpp to stop it converting g from deg to rad
-    madgwick_lib.updateIMU(gy, -gx, gz, ay, -ax, az, imu_y_negative1, imu_y_0, imu_y_1, imu_y_2);
-    imu_y_3 = gy;
-    imu_y_4 = -gx;
+    madgwick_lib.updateIMU(-gx, gy, gz, -ax, ay, az, imu_y_negative1, imu_y_0, imu_y_1, imu_y_2);
+    imu_y_3 = -gx;
+    imu_y_4 = gy;
     imu_y_5 = gz;
 }
 

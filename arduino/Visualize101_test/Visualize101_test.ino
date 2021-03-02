@@ -43,7 +43,7 @@ void configure_imu() {
 void configure_filter() {
   float frequency = 125;
   filter.begin(frequency);
-  filter.set_beta(0.5f);
+  filter.set_beta(0.7f);
   // initialize variables to pace updates to correct rate
   microsPerReading = 1000000 / frequency;
   microsPrevious = micros();
@@ -64,7 +64,7 @@ void setup() {
   start_imu_communication();
   configure_imu();
   configure_filter();
-  calibrate_imu();
+//  calibrate_imu();
 }
 
 void loop() {
@@ -89,13 +89,13 @@ void loop() {
     gx = IMU.getGyroX_rads();
     gy = IMU.getGyroY_rads();
     gz = IMU.getGyroZ_rads();
-    mx = IMU.getMagX_uT();
-    my = IMU.getMagY_uT();
-    mz = IMU.getMagZ_uT();
-    temp = IMU.getTemperature_C();
+//    mx = IMU.getMagX_uT();
+//    my = IMU.getMagY_uT();
+//    mz = IMU.getMagZ_uT();
+//    temp = IMU.getTemperature_C();
 
     // update the filter, which computes orientation
-    filter.update(gy, -gx, gz, ay, -ax, az, mx, -my, -mz, q0, q1, q2, q3);
+    filter.updateIMU(-gx, gy, gz, -ax, ay, az, q0, q1, q2, q3);
 
     // print the heading, pitch and roll
     roll = filter.getRoll();
@@ -106,7 +106,15 @@ void loop() {
     Serial.print(" ");
     Serial.print(pitch);
     Serial.print(" ");
-    Serial.println(heading);
+    Serial.print(heading);
+    Serial.print(" ");
+    Serial.print(q0, 4);
+    Serial.print(" ");
+    Serial.print(q1, 4);
+    Serial.print(" ");
+    Serial.print(q2, 4);
+    Serial.print(" ");
+    Serial.println(q3, 4);
 
     // increment previous time, so we keep proper pace
     microsPrevious = microsPrevious + microsPerReading;
