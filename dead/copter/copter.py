@@ -11,12 +11,12 @@ class DeadCopter:
         self.__state = np.array([1] + [0] * 9)
 
         # general
-        self.__mass = 2  # kg                           # total mass of aircraft
+        self.__mass = 1 # kg                           # total mass of aircraft
         self.__arm_length = 0.225  # m                    # quad arm length
         self.__num_motors = 4  # motors                   # no. of motors
-        self.__moi_xx = 0.0321  # kg.m^2                   # moment of inertia xx
-        self.__moi_yy = 0.0340  # kg.m^2                   # moment of inertia yy
-        self.__moi_zz = 0.0575  # kg.m^2                   # moment of inertia zz
+        self.__moi_xx = 0.01788  # kg.m^2                   # moment of inertia xx
+        self.__moi_yy = 0.03014  # kg.m^2                   # moment of inertia yy
+        self.__moi_zz = 0.04614  # kg.m^2                   # moment of inertia zz
         self.__moi = np.diagflat(
             [self.__moi_xx, self.__moi_yy, self.__moi_zz])    # inertia matrix
         self.__gravity_acc = 9.81  # m/s^2                # acceleration of gravity
@@ -27,7 +27,7 @@ class DeadCopter:
         self.__motor_time_constant = 35 / 1000  # s       # motor time constant
         self.__rotor_mass = 42 / 1000  # kg               # rotor mass
         self.__rotor_radius = 19 / 1000  # m              # rotor radius
-        self.__motor_mass = 112 / 1000  # kg               # total mass of motor
+        self.__motor_mass = 112 / 1000  # kg              # total mass of motor
         self.__voltage_max = 18  # V                      # max voltage to motor
         self.__voltage_min = 15  # V                      # min voltage to motor
 

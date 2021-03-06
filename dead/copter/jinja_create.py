@@ -10,11 +10,11 @@ timestamp = datetime.datetime.utcnow()
 # run simulator to get constant matrices
 
 # copter intialisation
-copter = dead.copter.copter.DeadCopter(mass=2,  # mass of entire copter in kg
+copter = dead.copter.copter.DeadCopter(mass=1.4,  # mass of entire copter in kg
                                        arm_length=0.225,  # half the distance between two opposite motors in m
                                        K_v=1000,  # Kv rating of the motors
                                        voltage_max=18,  # max voltage of battery in V
-                                       voltage_min=15,  # min voltage of battery in V
+                                       voltage_min=16,  # min voltage of battery in V
                                        prop_diameter_in=10)  # propeller diameter in inches
 
 # simulator intialisation
