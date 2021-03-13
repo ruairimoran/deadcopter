@@ -24,18 +24,18 @@ class DeadCopter:
 
         # motors
         self.__K_v = 1000  # rpm/V                        # motor speed constant
-        self.__motor_time_constant = 35 / 1000  # s       # motor time constant
-        self.__rotor_mass = 42 / 1000  # kg               # rotor mass
+        self.__motor_time_constant = 50 / 1000  # s       # motor time constant
+        self.__rotor_mass = 40 / 1000  # kg               # rotor mass
         self.__rotor_radius = 19 / 1000  # m              # rotor radius
         self.__motor_mass = 112 / 1000  # kg              # total mass of motor
-        self.__voltage_max = 18  # V                      # max voltage to motor
+        self.__voltage_max = 16.8  # V                    # max voltage to motor
         self.__voltage_min = 15  # V                      # min voltage to motor
 
         # props
-        self.__thrust_coeff = 0.1                         # thrust coefficient
-        self.__power_coeff = 0.04                         # power coefficient
-        self.__prop_mass = 20 / 1000  # kg                # prop mass
-        self.__prop_diameter_in = 9                       # prop diameter in inches
+        self.__thrust_coeff = 0.112                        # thrust coefficient
+        self.__power_coeff = 0.044                         # power coefficient
+        self.__prop_mass = 9 / 1000  # kg                 # prop mass
+        self.__prop_diameter_in = 10                      # prop diameter in inches
 
         # noise
         self.__disturbance_level = 1e-3
@@ -88,6 +88,10 @@ class DeadCopter:
     @property
     def quaternion(self):
         return self.__state[0:4]
+
+    @property
+    def hover_rpm(self):
+        return self.__n_h
 
     def controllability(self, a, b, n):
         ctrb_rank = np.linalg.matrix_rank(C.ctrb(a, b))
