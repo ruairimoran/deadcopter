@@ -11,12 +11,12 @@ class DeadCopter:
         self.__state = np.array([1] + [0] * 9)
 
         # general
-        self.__mass = 2  # kg                           # total mass of aircraft
+        self.__mass = 1 # kg                           # total mass of aircraft
         self.__arm_length = 0.225  # m                    # quad arm length
         self.__num_motors = 4  # motors                   # no. of motors
-        self.__moi_xx = 0.0321  # kg.m^2                   # moment of inertia xx
-        self.__moi_yy = 0.0340  # kg.m^2                   # moment of inertia yy
-        self.__moi_zz = 0.0575  # kg.m^2                   # moment of inertia zz
+        self.__moi_xx = 0.01788  # kg.m^2                   # moment of inertia xx
+        self.__moi_yy = 0.03014  # kg.m^2                   # moment of inertia yy
+        self.__moi_zz = 0.04614  # kg.m^2                   # moment of inertia zz
         self.__moi = np.diagflat(
             [self.__moi_xx, self.__moi_yy, self.__moi_zz])    # inertia matrix
         self.__gravity_acc = 9.81  # m/s^2                # acceleration of gravity
@@ -24,18 +24,18 @@ class DeadCopter:
 
         # motors
         self.__K_v = 1000  # rpm/V                        # motor speed constant
-        self.__motor_time_constant = 35 / 1000  # s       # motor time constant
-        self.__rotor_mass = 42 / 1000  # kg               # rotor mass
+        self.__motor_time_constant = 50 / 1000  # s       # motor time constant
+        self.__rotor_mass = 40 / 1000  # kg               # rotor mass
         self.__rotor_radius = 19 / 1000  # m              # rotor radius
-        self.__motor_mass = 112 / 1000  # kg               # total mass of motor
-        self.__voltage_max = 18  # V                      # max voltage to motor
+        self.__motor_mass = 112 / 1000  # kg              # total mass of motor
+        self.__voltage_max = 16.8  # V                    # max voltage to motor
         self.__voltage_min = 15  # V                      # min voltage to motor
 
         # props
-        self.__thrust_coeff = 0.1                         # thrust coefficient
-        self.__power_coeff = 0.04                         # power coefficient
-        self.__prop_mass = 20 / 1000  # kg                # prop mass
-        self.__prop_diameter_in = 9                       # prop diameter in inches
+        self.__thrust_coeff = 0.112                        # thrust coefficient
+        self.__power_coeff = 0.044                         # power coefficient
+        self.__prop_mass = 9 / 1000  # kg                 # prop mass
+        self.__prop_diameter_in = 10                      # prop diameter in inches
 
         # noise
         self.__disturbance_level = 1e-3
@@ -89,6 +89,10 @@ class DeadCopter:
     def quaternion(self):
         return self.__state[0:4]
 
+    @property
+    def hover_rpm(self):
+        return self.__n_h
+
     def controllability(self, a, b, n):
         ctrb_rank = np.linalg.matrix_rank(C.ctrb(a, b))
         if ctrb_rank < n:
@@ -99,21 +103,15 @@ class DeadCopter:
         if obsv_rank < n:
             raise Exception(f"System not observable. Obsv Matrix Rank ({obsv_rank}) < Measured States ({n})")
 
-    def LQR(self, a, b, c, na, nc):
-        a_bar = np.vstack((np.hstack((a, np.zeros(shape=(na, nc)))),
-                           np.hstack((-c, np.identity(nc)))))
-        b_bar = np.vstack((b,
-                           np.zeros(shape=(nc, b.shape[1]))))
-        Q_lqr = np.diagflat([2000, 2000, 2000, 10, 10, 10, 1, 1, 1, 2, 2, 2, 2, 2, 2])  # a.shape[0] + c.shape[0] # for 238 Hz = [1850, 1850, 1100, 12, 12, 12, 1, 1, 1, 20, 20, 20, 20, 20, 20]
-        R_lqr = np.diagflat([0.9, 1.6, 1.6])  # b.shape[1] # for 238 Hz = [0.3, 0.3, 0.3]
-        solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(a_bar, b_bar, Q_lqr, R_lqr)
-        K_x = -negative_gain_K_lqr[:, 0:na]
-        K_z = -negative_gain_K_lqr[:, na:na+nc]
-        return K_x, K_z
+    def LQR(self, a, b):  # 125 Hz
+        Q_lqr = np.diagflat([4000, 4000, 1000, 1, 1, 1, 1, 1, 1])  # a.shape[0]
+        R_lqr = np.diagflat([1, 1, 1])  # b.shape[1]
+        solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(a, b, Q_lqr, R_lqr)
+        return -negative_gain_K_lqr
 
     def Kf(self, a, c):
-        Q_Kf = np.diagflat([100, 100, 100, 1000, 1000, 1000, 1000, 1000, 1000])  # a.shape[0]
-        R_Kf = np.diagflat([100, 100, 100, 800, 800, 800])  # c.shape[0]
+        Q_Kf = np.diagflat([1, 1, 1, 1, 1, 1, 500, 500, 500])  # a.shape[0]
+        R_Kf = np.diagflat([1, 1, 1, 1, 1, 1])  # c.shape[0]
         solution_P_Kf, eigenvalues_cl_Kf, negative_gain_L_Kf = C.dare(a.T, c.T, Q_Kf, R_Kf)
         return -negative_gain_L_Kf.T
 

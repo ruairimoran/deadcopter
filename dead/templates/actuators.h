@@ -12,11 +12,9 @@
 #define BACK_RIGHT_ESC_PIN {{back_right_pin}}
 
 #define ZERO_ROTOR_SPEED {{zero_thrust_pwm}}  // 1000
-#define IDLE_ROTOR_SPEED {{idle_thrust_pwm}}  // 1150
-#define ABSOLUTE_MIN_PWM {{absolute_min_pwm_value}}  // 1000
+#define IDLE_ROTOR_SPEED {{idle_thrust_pwm}}  // 1130
+#define ABSOLUTE_MIN_PWM {{absolute_min_pwm_value}}  // 800
 #define ABSOLUTE_MAX_PWM {{absolute_max_pwm_value}}  // 2000
-#define SERVO_LIBRARY_MIN_ANGLE {{servo_range_min}}  // 0 degrees
-#define SERVO_LIBRARY_MAX_ANGLE {{servo_range_max}}  // 180 degrees
 
 class Esc {
     private:
@@ -24,7 +22,7 @@ class Esc {
     Servo esc_front_right;
     Servo esc_back_left;
     Servo esc_back_right;
-    bool arm_status;
+    bool arm_status = false;
 
     public:
     Esc();
@@ -32,7 +30,7 @@ class Esc {
     void write_speed_to_esc(int rotor_speed_front_left, int rotor_speed_front_right, int rotor_speed_back_left, int rotor_speed_back_right);
     void disarm(void);
     void arm(void);
-    void get_arm_status(bool &esc_arm_status);
+    bool get_arm_status(void);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -66,8 +64,8 @@ void Esc::arm(void) {
     write_speed_to_esc(IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED, IDLE_ROTOR_SPEED);
 }
 
-void Esc::get_arm_status(bool &esc_arm_status) {
-    esc_arm_status = arm_status;
+bool Esc::get_arm_status(void) {
+    return arm_status;
 }
 
 #endif

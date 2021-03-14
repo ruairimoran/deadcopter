@@ -1,4 +1,4 @@
-// 2021-01-04 23:57:56.167062
+// 2021-03-14 20:20:33.429794
 
 #ifndef receiver.h
 #define receiver.h
@@ -8,26 +8,24 @@
 
 #define RX_PIN 7  // input pin for wire from receiver
 #define NO_OF_CHANNELS 8 // number of receiver channels
-#define PULSE_GAPS_MEASURED 2*NO_OF_CHANNELS+1  // minimum needed to guarantee all channels read after first frame end
-#define FRAME_CHANGE 5000  // must be less than time between last pulse in one frame and first pulse in next frame,
-                           // but more than maximum time between any consecutive pulses in the same frame,
-                           // measured using "receiver_pulse_test_time.ino" in microseconds (default: 5000)
-#define RECEIVER_MIN 1070  // minimum pwm input from receiver channel
-#define RECEIVER_MAX 1930  // maximum pwm input from receiver channel
-#define THROTTLE_MIN 1150  // minimum throttle input
-#define THROTTLE_MAX 1850  // maximum throttle input
-#define ABSOLUTE_MAX_COPTER_ANGLE 40  // maximum angle the quadcopter can tilt from upright
+#define FRAME_CHANGE 3500  // must be less than time between last pulse in one frame and first pulse in next frame,
+                                            // but more than maximum time between any consecutive pulses in the same frame,
+                                            // measured using "receiver_pulse_test_time.ino" in microseconds (default: 5000)
 
 class Receiver {
     private:
-    unsigned long int current_time, previous_time, time_difference;  // for calculating pulse separation time
-    int read_rx[PULSE_GAPS_MEASURED], decode_rx[PULSE_GAPS_MEASURED], output_rx[NO_OF_CHANNELS+1];  // arrays to store values
+    unsigned long int current_time = 0;  // for calculating pulse separation time
+    unsigned long int previous_time = 0;
+    unsigned long int time_difference = 0;
+    int channel = 0;
+    int output_rx[NO_OF_CHANNELS+1] = {0};  // store receiver channel values
 
     public:
     Receiver();
-    int aux_channel_1, aux_channel_2, aux_channel_3, aux_channel_4;
-    void read_ppm(void);
-    void decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw);
+    void ISR_read_ppm(void);
+    int get_channel(void);
+    void read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw,
+                       int &rx_aux_1, int &rx_aux_2, int &rx_aux_3, int &rx_aux_4);
 };
 
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -36,55 +34,36 @@ Receiver::Receiver() {
     pinMode(RX_PIN, INPUT_PULLUP);
 }
 
-void Receiver::read_ppm(void) {
-    static int i, j;  // counters
-    // reads frames from RC receiver PPM pin
-    // gives channel values from 1000 - 2000
-    current_time = micros();  // store current time value when pin value rising
-    time_difference = current_time - previous_time;  // calculate time between two rising edges
-    previous_time = current_time;
-    read_rx[i] = time_difference;  // store value in array
-    i += 1;
-    if(i==PULSE_GAPS_MEASURED) {
-        decode_rx[0] = read_rx[0];  // copy all values from temporary array into analysis array after PULSE_GAPS_MEASURED readings
-        decode_rx[1] = read_rx[1];
-        decode_rx[2] = read_rx[2];
-        decode_rx[3] = read_rx[3];
-        decode_rx[4] = read_rx[4];
-        decode_rx[5] = read_rx[5];
-        decode_rx[6] = read_rx[6];
-        decode_rx[7] = read_rx[7];
-        decode_rx[8] = read_rx[8];
-        decode_rx[9] = read_rx[9];
-        decode_rx[10] = read_rx[10];
-        decode_rx[11] = read_rx[11];
-        decode_rx[12] = read_rx[12];
-        decode_rx[13] = read_rx[13];
-        decode_rx[14] = read_rx[14];
-        decode_rx[15] = read_rx[15];
-        decode_rx[16] = read_rx[16];
-        i=0;
+void Receiver::ISR_read_ppm(void) {
+    current_time = micros();  // store current time in microseconds
+    time_difference = current_time - previous_time;
+    previous_time = current_time;  // update previous_time for next interrupt call
+    if(time_difference > FRAME_CHANGE) {  // if time difference between pulses is >FRAME_CHANGEus, this indicates the start of a PPM frame (which are 20ms)
+        channel = 1;  // therefore the next pulse time read will be channel 1
+    }
+    else {
+        if((900 < time_difference) && (time_difference < 2100) && (channel < NO_OF_CHANNELS+1)) {  // PPM signals only valid between 900 and 2100us
+            output_rx[channel] = time_difference;  // set channel value
+        }
+        channel += 1;  // next interrupt will calculate next channel
     }
 }
 
-void Receiver::decode_ppm(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw) {
-    static int p, q, r;  // counters
-    for (r=PULSE_GAPS_MEASURED-1; r>-1; r--) {
-        if (decode_rx[r]>FRAME_CHANGE) {
-            q = r;  // detect first separation space of >FRAME_CHANGEus in analysis array
-        }
-    }
-    for (p=1; p<=NO_OF_CHANNELS; p++){
-        output_rx[p] = decode_rx[p+q];  // output 8 channel values after first separation space
-    }
-    rx_throttle = map(output_rx[3], RECEIVER_MIN, RECEIVER_MAX, THROTTLE_MIN, THROTTLE_MAX);
-    rx_roll = map(output_rx[1], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-    rx_pitch = map(output_rx[2], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-    rx_yaw = map(output_rx[4], RECEIVER_MIN, RECEIVER_MAX, -ABSOLUTE_MAX_COPTER_ANGLE, ABSOLUTE_MAX_COPTER_ANGLE);
-    aux_channel_1 = output_rx[5];
-    aux_channel_2 = output_rx[6];
-    aux_channel_3 = output_rx[7];
-    aux_channel_4 = output_rx[8];
+int Receiver::get_channel(void) {
+    return channel;
+}
+
+void Receiver::read_channels(int &rx_throttle, int &rx_roll, int &rx_pitch, int &rx_yaw,
+                             int &rx_aux_1, int &rx_aux_2, int &rx_aux_3, int &rx_aux_4) {
+    // reformat receiver values
+    rx_throttle = output_rx[3];
+    rx_roll = output_rx[1];
+    rx_pitch = output_rx[2];
+    rx_yaw = output_rx[4];
+    rx_aux_1 = output_rx[5];
+    rx_aux_2 = output_rx[6];
+    rx_aux_3 = output_rx[7];
+    rx_aux_4 = output_rx[8];
 }
 
 #endif

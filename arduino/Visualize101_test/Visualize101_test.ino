@@ -33,29 +33,29 @@ void configure_imu() {
   // setting the gyroscope full scale range to +/-500 deg/s
   IMU.setGyroRange(MPU9250::GYRO_RANGE_500DPS); // GOTO IMU readme for possible ranges
   // setting DLPF bandwidth to 184 Hz
-  IMU.setDlpfBandwidth(MPU9250::DLPF_BANDWIDTH_184HZ);
+  IMU.setDlpfBandwidth(MPU9250::DLPF_BANDWIDTH_41HZ);
   // Data Output Rate = 1000 / (1 + SRD)
   // setting SRD to 0 for a 1000Hz update rate
   // mag fixed at 100Hz for SRD<=9, 8Hz for SRD>9
-  IMU.setSrd(0); // gyro/accel/temp = 1000Hz, mag = 100Hz
+  IMU.setSrd(7); // gyro/accel/temp = 1000Hz, mag = 100Hz
 }
 
 void configure_filter() {
-  float frequency = 5000;
+  float frequency = 125;
   filter.begin(frequency);
-  filter.set_beta(1.0f);
+  filter.set_beta(0.7f);
   // initialize variables to pace updates to correct rate
   microsPerReading = 1000000 / frequency;
   microsPrevious = micros();
 }
 
 void calibrate_imu() {
-  Serial.println("Calibrating magnetometer...");
-  IMU.calibrateMag();
   Serial.println("Calibrating accelerometers...");
   IMU.calibrateAccel();
   Serial.println("Calibrating gyroscope...");
   IMU.calibrateGyro();
+  Serial.println("Calibrating magnetometer...");
+  IMU.calibrateMag();
   Serial.println("Done!");
 }
 
@@ -64,7 +64,7 @@ void setup() {
   start_imu_communication();
   configure_imu();
   configure_filter();
-  calibrate_imu();
+//  calibrate_imu();
 }
 
 void loop() {
@@ -89,24 +89,32 @@ void loop() {
     gx = IMU.getGyroX_rads();
     gy = IMU.getGyroY_rads();
     gz = IMU.getGyroZ_rads();
-    mx = IMU.getMagX_uT();
-    my = IMU.getMagY_uT();
-    mz = IMU.getMagZ_uT();
-    temp = IMU.getTemperature_C();
+//    mx = IMU.getMagX_uT();
+//    my = IMU.getMagY_uT();
+//    mz = IMU.getMagZ_uT();
+//    temp = IMU.getTemperature_C();
 
     // update the filter, which computes orientation
-    q0, q1, q2, q3 = filter.update(gx, gy, gz, ax, ay, az, mx, my, mz);
+    filter.updateIMU(-gx, gy, gz, -ax, ay, az, q0, q1, q2, q3);
 
     // print the heading, pitch and roll
     roll = filter.getRoll();
     pitch = filter.getPitch();
     heading = filter.getYaw();
     Serial.print("Orientation: ");
-    Serial.print(heading);
+    Serial.print(roll);
     Serial.print(" ");
     Serial.print(pitch);
     Serial.print(" ");
-    Serial.println(roll);
+    Serial.print(heading);
+    Serial.print(" ");
+    Serial.print(q0, 4);
+    Serial.print(" ");
+    Serial.print(q1, 4);
+    Serial.print(" ");
+    Serial.print(q2, 4);
+    Serial.print(" ");
+    Serial.println(q3, 4);
 
     // increment previous time, so we keep proper pace
     microsPrevious = microsPrevious + microsPerReading;
