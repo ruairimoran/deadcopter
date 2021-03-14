@@ -63,8 +63,8 @@ class Simulator:
         r = np.zeros(6, )
 
         for k in range(self.__num_simulation_points):
-            if k > self.__num_simulation_points/2:
-                r = [-0.0044, -0.0251, -0.0249, 0, 0, 0]
+            # if k > self.__num_simulation_points/2:
+            #     r = [-0.0044, -0.0251, -0.0249, 0, 0, 0]
 
             v_omega = np.random.multivariate_normal(np.zeros((6,)), np.identity(6))
             y = np.asarray(self.__Cd @ copter.state[1:10]).reshape(6, )

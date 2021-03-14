@@ -10,7 +10,7 @@ copter = dead.copter.copter.DeadCopter(disturbance_level=1e-4,
                                        prop_diameter_in=10)
 
 # simulator intialisation
-sim = dead.copter.simulator.Simulator(t_simulation=3,
+sim = dead.copter.simulator.Simulator(t_simulation=2,
                                       t_sampling=1/125,
                                       measurement_noise_multiplier=1e-4)
 

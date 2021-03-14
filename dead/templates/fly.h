@@ -11,7 +11,7 @@
 
 #define RECEIVER_MIN {{receiver_min}}  // minimum pwm input from receiver channel
 #define RECEIVER_MAX {{receiver_max}}  // maximum pwm input from receiver channel
-#define THROTTLE_MAX 8  // (out of 10) max throttle to allow stability control at full throttle
+#define THROTTLE_MAX 3  // (out of 10) max throttle to allow stability control at full throttle
 #define MAX_COPTER_ANGLE {{max_angle}}*DEG_TO_RAD  // maximum angle the quadcopter can tilt from upright
 
 class Fly {
