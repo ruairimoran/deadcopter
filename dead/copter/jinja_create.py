@@ -38,7 +38,9 @@ def reformat_matrix_to_array(python_matrix):
             .replace("}", "},", bracket_counter)\
             .replace(",,", ",")\
             .replace(",,", ",")\
-            .replace(",,", ",")
+            .replace(",,", ",")\
+            .replace("{,", "{")\
+            .replace(",}", "}")
     elif str(py_array_format).count("[-") > 0:                    # catch any other negatives in array
         bracket_counter = str(py_array_format).count("]") - 2
         return str(py_array_format).replace("[", "{")\
@@ -48,7 +50,9 @@ def reformat_matrix_to_array(python_matrix):
             .replace("}", "},", bracket_counter)\
             .replace(",,", ",")\
             .replace(",,", ",")\
-            .replace(",,", ",")
+            .replace(",,", ",")\
+            .replace("{,", "{")\
+            .replace(",}", "}")
     else:                                                         # for all positive arrays
         bracket_counter = str(py_array_format).count("]") - 2
         return str(py_array_format).replace("[", "{") \

@@ -1,5 +1,5 @@
 //  Deadcopter is learning. Stay tuned.
-// 2021-03-14 20:20:33.429794
+// 2021-03-16 12:26:43.286141
 
 // DueTimer Timers 0,2,3,4,5 unavailable due to use of Servo library
 #include <Arduino.h>
@@ -80,7 +80,7 @@ void setup() {
 
 void loop() {
 //----------------------------------------------------------------------------------------------------------------------
-    // poll imu interrupt pin for data ready
+    // poll imu interrupt pin
 
     if(flag_flight_control == true) {
         // count 5 runs of function - makes 40ms timer
@@ -152,23 +152,23 @@ void loop() {
 
         millisNow = millis();
         if(millisNow - millisPrevious >= millisPerSerialOutput) {
-            Serial.print(imu_read_time_difference);Serial.print("\t");
+//            Serial.print(imu_read_time_difference);Serial.print("\t");
 
             Serial.print(_u0, 7);Serial.print("\t");
             Serial.print(_u1, 7);Serial.print("\t");
             Serial.print(_u2, 7);Serial.print("\t");
 
             Serial.print(q0y, 7);Serial.print("\t");
-            Serial.print(_y0, 7);Serial.print("\t");
-            Serial.print(_y1, 7);Serial.print("\t");
-            Serial.print(_y2, 7);Serial.print("\t");
-
+//            Serial.print(_y0, 7);Serial.print("\t");
+//            Serial.print(_y1, 7);Serial.print("\t");
+//            Serial.print(_y2, 7);Serial.print("\t");
+//
             Serial.print(due_motors.get_arm_status());Serial.print("\t");
             Serial.print(due_throttle);Serial.print("\t");
-            Serial.print(due_yaw);Serial.print("\t");
-            Serial.print(due_pitch);Serial.print("\t");
-            Serial.print(due_roll);Serial.print("\t");
-
+//            Serial.print(due_yaw);Serial.print("\t");
+//            Serial.print(due_pitch);Serial.print("\t");
+//            Serial.print(due_roll);Serial.print("\t");
+//
             Serial.print(due_front_left);Serial.print("\t");
             Serial.print(due_front_right);Serial.print("\t");
             Serial.print(due_back_left);Serial.print("\t");
