@@ -38,7 +38,7 @@ class DeadCopter:
         self.__prop_diameter_in = 10                      # prop diameter in inches
 
         # noise
-        self.__disturbance_level = 1e-3
+        self.__disturbance_level = 1e-1
 
         # parse `kwargs` and set as attribute, provided the keyword corresponds
         # to one of the variables defined above
@@ -104,14 +104,14 @@ class DeadCopter:
             raise Exception(f"System not observable. Obsv Matrix Rank ({obsv_rank}) < Measured States ({n})")
 
     def LQR(self, a, b):  # 125 Hz
-        Q_lqr = np.diagflat([4000, 4000, 1000, 1, 1, 1, 1, 1, 1])  # a.shape[0]
+        Q_lqr = np.diagflat([4000, 4000, 1000, 1, 1, 1, 0, 0, 0])  # a.shape[0]
         R_lqr = np.diagflat([1, 1, 1])  # b.shape[1]
         solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(a, b, Q_lqr, R_lqr)
         return -negative_gain_K_lqr
 
     def Kf(self, a, c):
         Q_Kf = np.diagflat([1, 1, 1, 1, 1, 1, 500, 500, 500])  # a.shape[0]
-        R_Kf = np.diagflat([1, 1, 1, 1, 1, 1])  # c.shape[0]
+        R_Kf = 2*np.diagflat([1, 1, 1, 1, 1, 1])  # c.shape[0]
         solution_P_Kf, eigenvalues_cl_Kf, negative_gain_L_Kf = C.dare(a.T, c.T, Q_Kf, R_Kf)
         return -negative_gain_L_Kf.T
 
@@ -204,7 +204,7 @@ class DeadCopter:
         solution = solve_ivp(dynamics,
                              [0, dt],
                              self.__state)
-        self.__state = solution.y[:, -1] + [0.0001]  # add constant disturbance
+        self.__state = solution.y[:, -1]
         state_noise = np.random.multivariate_normal(np.zeros(3,), self.__disturbance_covariance)
         self.__state[7:10] += state_noise
         self.__state[0:4] = self.normalise_quaternion(self.__state[0:4])
