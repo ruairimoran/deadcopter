@@ -180,7 +180,7 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     {% endfor %}
 
     // format into control output for motors
-    throttle_and_u[0] = (fly_throttle - (float) RECEIVER_MIN) * ((float) THROTTLE_MAX) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN);  // form matrix of throttle on top of u;  // form matrix of throttle on top of u
+    throttle_and_u[0] = (fly_throttle - (float) RECEIVER_MIN) * ((float) THROTTLE_MAX) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN);  // form matrix of throttle on top of u
     {% for row in range(4) -%}
     output_to_motor[{{row}}] =
         {%- for col in range(4) -%}
