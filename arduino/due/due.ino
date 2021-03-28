@@ -1,5 +1,5 @@
 //  Deadcopter is learning. Stay tuned.
-// 2021-03-20 11:32:44.624637
+// 2021-03-27 14:39:23.118218
 
 // DueTimer Timers 0,2,3,4,5 unavailable due to use of Servo library
 #include <Arduino.h>
@@ -165,9 +165,9 @@ void loop() {
 
             Serial.print(due_motors.get_arm_status());Serial.print("\t");
             Serial.print(due_throttle);Serial.print("\t");
-            Serial.print(due_yaw);Serial.print("\t");
-            Serial.print(due_pitch);Serial.print("\t");
-            Serial.print(due_roll);Serial.print("\t");
+//            Serial.print(due_yaw);Serial.print("\t");
+//            Serial.print(due_pitch);Serial.print("\t");
+//            Serial.print(due_roll);Serial.print("\t");
 
             Serial.print(due_front_left);Serial.print("\t");
             Serial.print(due_front_right);Serial.print("\t");

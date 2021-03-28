@@ -1,4 +1,4 @@
-// 2021-03-20 11:32:44.624637
+// 2021-03-27 14:39:23.118218
 
 #ifndef imu.h
 #define imu.h
@@ -48,6 +48,7 @@ void Imu::configure_imu_and_madgwick(void) {
     while(imu_status < 0) {  // until imu starts communicating
         configure_madgwick_lib();
         configure_imu();
+        calibrate_imu();
         digitalWrite(LED_BUILTIN, HIGH);  // LED will remain solid on if imu not communicating
     }
 }
@@ -55,7 +56,7 @@ void Imu::configure_imu_and_madgwick(void) {
 void Imu::configure_madgwick_lib(void) {
     madgwick_lib.begin(SAMPLING_FREQUENCY);
     // edited MadgwickAHRS.cpp to allow gain (beta) to be set from sketch
-    madgwick_lib.set_beta(0.7f);  // set filter gain
+    madgwick_lib.set_beta(5.0f);  // set filter gain
 }
 
 void Imu::configure_imu(void) {
@@ -81,7 +82,7 @@ void Imu::configure_imu(void) {
 }
 
 void Imu::calibrate_imu(void) {
-    imu_lib.calibrateMag();
+//    imu_lib.calibrateMag();
     imu_lib.calibrateAccel();
     imu_lib.calibrateGyro();
 }

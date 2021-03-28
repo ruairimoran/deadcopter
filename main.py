@@ -2,12 +2,12 @@ import dead
 
 # copter intialisation
 copter = dead.copter.copter.DeadCopter(disturbance_level=1e-1,
-                                       mass=1.5,
+                                       mass=1.3,
                                        arm_length=0.225,
                                        K_v=1000,
                                        voltage_max=16.8,
-                                       voltage_min=15,
-                                       prop_diameter_in=10)
+                                       voltage_min=1.68,
+                                       prop_diameter_in=8)
 
 # simulator intialisation
 sim = dead.copter.simulator.Simulator(t_simulation=1.5,

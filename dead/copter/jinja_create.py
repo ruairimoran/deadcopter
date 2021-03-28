@@ -14,8 +14,8 @@ copter = dead.copter.copter.DeadCopter(mass=1.4,  # mass of entire copter in kg
                                        arm_length=0.225,  # half the distance between two opposite motors in m
                                        K_v=1000,  # Kv rating of the motors
                                        voltage_max=16.8,  # max voltage of battery in V
-                                       voltage_min=15,  # min voltage of battery in V
-                                       prop_diameter_in=10)  # propeller diameter in inches
+                                       voltage_min=1.68,  # min voltage of battery in V
+                                       prop_diameter_in=8)  # propeller diameter in inches
 
 # simulator intialisation
 sampling_frequency = 125  # in Hz - sets refresh rate of ESCs

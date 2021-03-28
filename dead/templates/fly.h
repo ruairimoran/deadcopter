@@ -11,7 +11,7 @@
 
 #define RECEIVER_MIN {{receiver_min}}  // minimum pwm input from receiver channel
 #define RECEIVER_MAX {{receiver_max}}  // maximum pwm input from receiver channel
-#define THROTTLE_MAX 3  // (out of 10) max throttle to allow stability control at full throttle
+#define THROTTLE_MAX 300  // (max 1850) max throttle to allow stability control at full throttle
 #define MAX_COPTER_ANGLE {{max_angle}}*DEG_TO_RAD  // maximum angle the quadcopter can tilt from upright
 
 class Fly {
@@ -40,10 +40,10 @@ class Fly {
 
     // for formatting into output to motor
     float output_to_motor[4] = {0};  // motor pwm from calculations
-    float motor_proportions[4][4] = {{ '{{' }}1.0, 1.0, 1.0, 1.0},
-                                     {1.0, {{ '-' }}1.0, 1.0, {{ '-' }}1.0},
-                                     {1.0, 1.0, {{ '-' }}1.0, {{ '-' }}1.0},
-                                     {1.0, {{ '-' }}1.0, {{ '-' }}1.0, 1.0{{ '}}' }};  // motor_speeds = motor_proportions * throttle_and_control
+    float motor_proportions[4][4] = {{ '{{' }}1.0, 10.0, 10.0, 10.0},
+                                     {1.0, {{ '-' }}10.0, 10.0, {{ '-' }}10.0},
+                                     {1.0, 10.0, {{ '-' }}10.0, {{ '-' }}10.0},
+                                     {1.0, {{ '-' }}10.0, {{ '-' }}10.0, 10.0{{ '}}' }};  // motor_speeds = motor_proportions * throttle_and_control
 
     // for solving quaternion differences
     float solve_q0(float q1, float q2, float q3);
@@ -188,10 +188,10 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
         {%- endfor -%}
     ;
     {% endfor -%}
-    fly_front_left = ceil(output_to_motor[0]*100.0f + 1000.0f);
-    fly_front_right = ceil(output_to_motor[1]*100.0f + 1000.0f);
-    fly_back_left = ceil(output_to_motor[2]*100.0f + 1000.0f);
-    fly_back_right = ceil(output_to_motor[3]*100.0f + 1000.0f);
+    fly_front_left = ceil(output_to_motor[0] + 1000.0f);
+    fly_front_right = ceil(output_to_motor[1] + 1000.0f);
+    fly_back_left = ceil(output_to_motor[2] + 1000.0f);
+    fly_back_right = ceil(output_to_motor[3] + 1000.0f);
 
     // find observed y_hat
     {% for row in range(6) -%}
