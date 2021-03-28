@@ -12,7 +12,7 @@ copter = dead.copter.copter.DeadCopter(disturbance_level=1e-1,
 # simulator intialisation
 sim = dead.copter.simulator.Simulator(t_simulation=1,
                                       t_sampling=1/125,
-                                      measurement_noise_multiplier=1e-4)
+                                      measurement_noise_multiplier=1e-7)
 
 # System design
 Ad, Bd, Cd, K, L, G = sim.system_design(copter)

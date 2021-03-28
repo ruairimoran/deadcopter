@@ -148,6 +148,43 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
 void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
                               float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
                               float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
+
+    // find observed y_hat
+    {% for row in range(6) -%}
+    y_hat[{{row}}] =
+        {%- for col in range(9) -%}
+        {{' '}}+ Cd[{{row}}][{{col}}]*x_hat[{{col}}]
+        {%- endfor -%}
+    ;
+    {% endfor %}
+
+    // find y difference (y_hat - y)
+    q0_y_hat = solve_q0(y_hat[0], y_hat[1], y_hat[2]);
+    quaternion_difference(q0_y_hat, y_hat[0], y_hat[1], y_hat[2],
+                          q0_y, y[0], y[1], y[2],
+                          q0_y_diff, y_diff[0], y_diff[1], y_diff[2]);
+    {% for count in range(3,6) -%}
+    y_diff[{{count}}] = y_hat[{{count}}] - y[{{count}}];
+    {% endfor %}
+
+    // find observed x_hat
+    {% for count in range(9) -%}
+    x_hat_buffer[{{count}}] = x_hat[{{count}}];
+    {% endfor -%}
+    {% for row in range(9) -%}
+    x_hat[{{row}}] =
+        {%- for col in range(9) -%}
+        {{' '}}+ Ad[{{row}}][{{col}}]*x_hat_buffer[{{col}}]
+        {%- endfor -%}
+        {%- for col in range(3) -%}
+        {{' '}}+ Bd[{{row}}][{{col}}]*throttle_and_u[{{col+1}}]
+        {%- endfor -%}
+        {%- for col in range(6) -%}
+        {{' '}}+ L[{{row}}][{{col}}]*y_diff[{{col}}]
+        {%- endfor -%}
+    ;
+    {% endfor %}
+
     // find x and u equilibrium values
     {% for count in range(3) -%}
     r_short[{{count}}] = r[{{count}}];
@@ -192,42 +229,6 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     fly_front_right = 1000; // ceil(output_to_motor[1] + 1000.0f);
     fly_back_left = 1000; // ceil(output_to_motor[2] + 1000.0f);
     fly_back_right = ceil(output_to_motor[3] + 1000.0f);
-
-    // find observed y_hat
-    {% for row in range(6) -%}
-    y_hat[{{row}}] =
-        {%- for col in range(9) -%}
-        {{' '}}+ Cd[{{row}}][{{col}}]*x_hat[{{col}}]
-        {%- endfor -%}
-    ;
-    {% endfor %}
-
-    // find y difference (y_hat - y)
-    q0_y_hat = solve_q0(y_hat[0], y_hat[1], y_hat[2]);
-    quaternion_difference(q0_y_hat, y_hat[0], y_hat[1], y_hat[2],
-                          q0_y, y[0], y[1], y[2],
-                          q0_y_diff, y_diff[0], y_diff[1], y_diff[2]);
-    {% for count in range(3,6) -%}
-    y_diff[{{count}}] = y_hat[{{count}}] - y[{{count}}];
-    {% endfor %}
-
-    // find observed x_hat
-    {% for count in range(9) -%}
-    x_hat_buffer[{{count}}] = x_hat[{{count}}];
-    {% endfor -%}
-    {% for row in range(9) -%}
-    x_hat[{{row}}] =
-        {%- for col in range(9) -%}
-        {{' '}}+ Ad[{{row}}][{{col}}]*x_hat_buffer[{{col}}]
-        {%- endfor -%}
-        {%- for col in range(3) -%}
-        {{' '}}+ Bd[{{row}}][{{col}}]*throttle_and_u[{{col+1}}]
-        {%- endfor -%}
-        {%- for col in range(6) -%}
-        {{' '}}+ L[{{row}}][{{col}}]*y_diff[{{col}}]
-        {%- endfor -%}
-    ;
-    {% endfor %}
 
     // if control action result is nan, reset x_hat and y_hat
     if(isnan(throttle_and_u[1]) || isnan(throttle_and_u[2]) || isnan(throttle_and_u[3])) {

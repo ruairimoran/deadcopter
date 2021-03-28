@@ -124,16 +124,12 @@ class DeadCopter:
         return q0
 
     def euler_angles(self, measured_quaternion):
-        """
-        Documentation
-        :return:
-        """
-        if measured_quaternion != 0:
+        if np.array(measured_quaternion).all != np.array((0, 0, 0, 0)).all:
             if np.shape(measured_quaternion) != (4,):
                 raise Exception(f"Error with quaternion input: {measured_quaternion}")
 
         q = measured_quaternion
-        if measured_quaternion == 0:
+        if np.array(measured_quaternion).all == np.array((0, 0, 0, 0)).all:
             q = self.quaternion
 
         phi = np.arctan2(2 * (q[0] * q[1] + q[2] * q[3]), 1 - 2 * (q[1] ** 2 + q[2] ** 2))
