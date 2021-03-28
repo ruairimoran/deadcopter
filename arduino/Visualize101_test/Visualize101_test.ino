@@ -43,7 +43,7 @@ void configure_imu() {
 void configure_filter() {
   float frequency = 125;
   filter.begin(frequency);
-  filter.set_beta(3.0f);
+  filter.set_beta(10.0f);
   // initialize variables to pace updates to correct rate
   microsPerReading = 1000000 / frequency;
   microsPerDisplay = 1000000 / 100;
@@ -106,21 +106,11 @@ void loop() {
     // print the heading, pitch and roll
     roll = filter.getRoll();
     pitch = filter.getPitch();
-    heading = filter.getYaw();
+//    heading = filter.getYaw();
     Serial.print("Orientation: ");
     Serial.print(roll);
     Serial.print(" ");
-    Serial.print(pitch);
-    Serial.print(" ");
-    Serial.print(heading);
-    Serial.print(" ");
-    Serial.print(q0, 4);
-    Serial.print(" ");
-    Serial.print(q1, 4);
-    Serial.print(" ");
-    Serial.print(q2, 4);
-    Serial.print(" ");
-    Serial.println(q3, 4);
+    Serial.println(pitch);
 
     // increment previous time, so we keep proper pace
     microsPreviousDisp = microsPreviousDisp + microsPerDisplay;

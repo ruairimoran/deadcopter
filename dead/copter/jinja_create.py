@@ -95,13 +95,14 @@ fly_template = env.get_template('fly.h')
 fly_output = fly_template.render(timestamp=timestamp,
                                  receiver_min=1065,
                                  receiver_max=1925,
-                                 max_angle=10,
+                                 max_angle=10,  # max angle rx can request quadcopter to go to
                                  discrete_A=_Ad,
                                  discrete_B=_Bd,
                                  discrete_C=_Cd,
                                  lqr_gain=_K,
                                  kf_gain=_L,
-                                 equilibrium_G=_G)
+                                 equilibrium_G=_G,
+                                 motor_gain=11)  # amplification of control action to pwm output
 fly_output_path = "../../arduino/due/fly.h"
 with open(fly_output_path, "w") as fh:
     fh.write(fly_output)

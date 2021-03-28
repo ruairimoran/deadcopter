@@ -40,10 +40,10 @@ class Fly {
 
     // for formatting into output to motor
     float output_to_motor[4] = {0};  // motor pwm from calculations
-    float motor_proportions[4][4] = {{ '{{' }}1.0, 10.0, 10.0, 10.0},
-                                     {1.0, {{ '-' }}10.0, 10.0, {{ '-' }}10.0},
-                                     {1.0, 10.0, {{ '-' }}10.0, {{ '-' }}10.0},
-                                     {1.0, {{ '-' }}10.0, {{ '-' }}10.0, 10.0{{ '}}' }};  // motor_speeds = motor_proportions * throttle_and_control
+    float motor_proportions[4][4] = {{ '{{' }}1.0, {{motor_gain}}.0, {{motor_gain}}.0, {{motor_gain}}.0},
+                                     {1.0, {{ '-' }}{{motor_gain}}.0, {{motor_gain}}.0, {{ '-' }}{{motor_gain}}.0},
+                                     {1.0, {{motor_gain}}.0, {{ '-' }}{{motor_gain}}.0, {{ '-' }}{{motor_gain}}.0},
+                                     {1.0, {{ '-' }}{{motor_gain}}.0, {{ '-' }}{{motor_gain}}.0, {{motor_gain}}.0{{ '}}' }};  // motor_speeds = motor_proportions * throttle_and_control
 
     // for solving quaternion differences
     float solve_q0(float q1, float q2, float q3);
@@ -189,8 +189,8 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     ;
     {% endfor -%}
     fly_front_left = ceil(output_to_motor[0] + 1000.0f);
-    fly_front_right = ceil(output_to_motor[1] + 1000.0f);
-    fly_back_left = ceil(output_to_motor[2] + 1000.0f);
+    fly_front_right = 1000; // ceil(output_to_motor[1] + 1000.0f);
+    fly_back_left = 1000; // ceil(output_to_motor[2] + 1000.0f);
     fly_back_right = ceil(output_to_motor[3] + 1000.0f);
 
     // find observed y_hat

@@ -60,6 +60,7 @@ class Simulator:
         state_hat_cache = state_hat
         euler_state_hat_cache = copter.euler_angles(state_hat[0:4])
 
+        control_action_cache = [0, 0, 0]
         r = np.zeros(6, )
 
         for k in range(self.__num_simulation_points):
@@ -92,13 +93,15 @@ class Simulator:
             state_hat = [state_hat_q0] + state_hat.tolist()
 
             euler_state_hat_cache = np.vstack((euler_state_hat_cache, copter.euler_angles(state_hat[0:4])))
+            control_action_cache = np.vstack((control_action_cache, control_action))
             state_cache = np.vstack((state_cache, copter.state))
             state_hat_cache = np.vstack((state_hat_cache, state_hat))
 
-        return euler_state_cache, euler_state_hat_cache, state_cache, state_hat_cache
+        return euler_state_cache, euler_state_hat_cache, control_action_cache, state_cache, state_hat_cache
 
     def plot_all(self,
                  euler_angle_cache, euler_state_hat_cache,
+                 control_action_cache,
                  state_cache, state_hat_cache,
                  ):
         plt.rcParams.update({'font.size': 18})
@@ -109,18 +112,27 @@ class Simulator:
         plt.plot(self.t_span, np.rad2deg(euler_angle_cache))
         plt.plot(self.t_span, np.rad2deg(euler_state_hat_cache), '--')
         plt.title("Euler angles")
-        plt.legend(["roll(x)", "pitch(y)", "yaw(z)", "roll_estimate", "pitch_estimate", "yaw_estimate"], loc="upper right")
+        plt.legend(["roll(x)", "pitch(y)", "yaw(z)", "roll_est.", "pitch_est.", "yaw_est."], loc="upper right")
         plt.ylabel("degrees")
         plt.xlabel("time /s")
         plt.grid()
 
-        # plot quaternion cache
+        # # plot quaternion cache
+        # plt.subplot(2, 2, 2)
+        # plt.plot(self.t_span, state_cache[:, 0:4])
+        # plt.plot(self.t_span, state_hat_cache[:, 0:4], '--')
+        # plt.title("quaternion")
+        # plt.legend(["q0", "q1", "q2", "q3", "q0_est.", "q1_est.", "q2_est.", "q3_est."], loc="upper right")
+        # plt.ylim([-0.03, 0.03])
+        # plt.ylabel("arbitrary")
+        # plt.xlabel("time /s")
+        # plt.grid()
+
+        # plot control action cache
         plt.subplot(2, 2, 2)
-        plt.plot(self.t_span, state_cache[:, 0:4])
-        plt.plot(self.t_span, state_hat_cache[:, 0:4], '--')
-        plt.title("quaternion")
-        plt.legend(["q0", "q1", "q2", "q3", "q0_est.", "q1_est.", "q2_est.", "q3_est."], loc="upper right")
-        plt.ylim([-0.03, 0.03])
+        plt.plot(self.t_span, control_action_cache)
+        plt.title("control action")
+        plt.legend(["ux", "uy", "uz"], loc="upper right")
         plt.ylabel("arbitrary")
         plt.xlabel("time /s")
         plt.grid()

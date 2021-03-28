@@ -1,4 +1,4 @@
-// 2021-03-27 14:39:23.118218
+// 2021-03-28 15:36:31.943719
 
 #ifndef imu.h
 #define imu.h
@@ -56,7 +56,7 @@ void Imu::configure_imu_and_madgwick(void) {
 void Imu::configure_madgwick_lib(void) {
     madgwick_lib.begin(SAMPLING_FREQUENCY);
     // edited MadgwickAHRS.cpp to allow gain (beta) to be set from sketch
-    madgwick_lib.set_beta(5.0f);  // set filter gain
+    madgwick_lib.set_beta(10.0f);  // set filter gain
 }
 
 void Imu::configure_imu(void) {

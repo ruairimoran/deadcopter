@@ -11,14 +11,14 @@ class DeadCopter:
         self.__state = np.array([1] + [0] * 9)
 
         # general
-        self.__mass = 1 # kg                           # total mass of aircraft
+        self.__mass = 1  # kg                           # total mass of aircraft
         self.__arm_length = 0.225  # m                    # quad arm length
         self.__num_motors = 4  # motors                   # no. of motors
         self.__moi_xx = 0.01788  # kg.m^2                   # moment of inertia xx
         self.__moi_yy = 0.03014  # kg.m^2                   # moment of inertia yy
         self.__moi_zz = 0.04614  # kg.m^2                   # moment of inertia zz
         self.__moi = np.diagflat(
-            [self.__moi_xx, self.__moi_yy, self.__moi_zz])    # inertia matrix
+            [self.__moi_xx, self.__moi_yy, self.__moi_zz])  # inertia matrix
         self.__gravity_acc = 9.81  # m/s^2                # acceleration of gravity
         self.__air_density = 1.225  # kg/m^3              # air density at sea level, 15 deg C
 
@@ -32,10 +32,10 @@ class DeadCopter:
         self.__voltage_min = 15  # V                      # min voltage to motor
 
         # props
-        self.__thrust_coeff = 0.112                        # thrust coefficient
-        self.__power_coeff = 0.044                         # power coefficient
+        self.__thrust_coeff = 0.112  # thrust coefficient
+        self.__power_coeff = 0.044  # power coefficient
         self.__prop_mass = 9 / 1000  # kg                 # prop mass
-        self.__prop_diameter_in = 10                      # prop diameter in inches
+        self.__prop_diameter_in = 10  # prop diameter in inches
 
         # noise
         self.__disturbance_level = 1e-1
@@ -54,20 +54,20 @@ class DeadCopter:
     def __compute_parameters(self):
         # modelling
         self.__disturbance_covariance = np.diagflat([self.__disturbance_level] * 3)
-        self.__prop_diameter_m = self.__prop_diameter_in * 0.0254                                   # prop diameter in meters
-        self.__motor_moi = self.__rotor_mass * (self.__rotor_radius**2)
+        self.__prop_diameter_m = self.__prop_diameter_in * 0.0254  # prop diameter in meters
+        self.__motor_moi = self.__rotor_mass * (self.__rotor_radius ** 2)
         self.__prop_moi = (self.__prop_mass * self.__prop_diameter_m ** 2) / 12  # kg.m^2           # prop moment of inertia
         self.__n_h = np.sqrt((self.__mass * self.__gravity_acc) /
                              (self.__num_motors * self.__thrust_coeff
                               * self.__air_density * (self.__prop_diameter_m ** 4)))
         self.__k1 = (self.__K_v * (self.__voltage_max - self.__voltage_min)) / 60  # /60 for rps
         self.__k2 = 1 / self.__motor_time_constant
-        self.__k3_x = (2 * self.__n_h * self.__thrust_coeff * self.__air_density * (self.__prop_diameter_m ** 4) \
-            * self.__num_motors * self.__arm_length) / ((2**0.5) * self.__moi_xx)
-        self.__k3_y = (2 * self.__n_h * self.__thrust_coeff * self.__air_density * (self.__prop_diameter_m ** 4) \
-            * self.__num_motors * self.__arm_length) / ((2**0.5) * self.__moi_yy)
-        self.__k3_z = (2 * self.__n_h * self.__power_coeff * self.__air_density * (self.__prop_diameter_m ** 5) \
-            * self.__num_motors) / (2 * np.pi * self.__moi_zz)
+        self.__k3_x = (2 * self.__n_h * self.__thrust_coeff * self.__air_density * (self.__prop_diameter_m ** 4)
+                       * self.__num_motors * self.__arm_length) / ((2 ** 0.5) * self.__moi_xx)
+        self.__k3_y = (2 * self.__n_h * self.__thrust_coeff * self.__air_density * (self.__prop_diameter_m ** 4)
+                       * self.__num_motors * self.__arm_length) / ((2 ** 0.5) * self.__moi_yy)
+        self.__k3_z = (2 * self.__n_h * self.__power_coeff * self.__air_density * (self.__prop_diameter_m ** 5)
+                       * self.__num_motors) / (2 * np.pi * self.__moi_zz)
         self.__k4_xy = 0
         self.__k4_z = (2 * np.pi * self.__num_motors * (self.__prop_moi + self.__motor_moi)) / self.__moi_zz
         self.__gamma_n = np.diagflat([self.__k3_x, self.__k3_y, self.__k3_z - (self.__k4_z * self.__k2)])
@@ -104,14 +104,14 @@ class DeadCopter:
             raise Exception(f"System not observable. Obsv Matrix Rank ({obsv_rank}) < Measured States ({n})")
 
     def LQR(self, a, b):  # 125 Hz
-        Q_lqr = np.diagflat([4000, 4000, 100, 1, 1, 10, 0, 0, 0])  # a.shape[0]
+        Q_lqr = np.diagflat([100, 100, 10, 2, 2, 10, 0, 0, 0])  # a.shape[0]
         R_lqr = np.diagflat([1, 1, 10])  # b.shape[1]
         solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(a, b, Q_lqr, R_lqr)
         return -negative_gain_K_lqr
 
     def Kf(self, a, c):
         Q_Kf = np.diagflat([1, 1, 1, 1, 1, 1, 500, 500, 500])  # a.shape[0]
-        R_Kf = 2*np.diagflat([1, 1, 1, 1, 1, 1])  # c.shape[0]
+        R_Kf = 2 * np.diagflat([1, 1, 1, 1, 1, 1])  # c.shape[0]
         solution_P_Kf, eigenvalues_cl_Kf, negative_gain_L_Kf = C.dare(a.T, c.T, Q_Kf, R_Kf)
         return -negative_gain_L_Kf.T
 
@@ -120,7 +120,7 @@ class DeadCopter:
         return non_norm_quaternion / norm
 
     def solve_q0(self, vector):
-        q0 = np.sqrt(1 - vector[0]**2 - vector[1]**2 - vector[2]**2)
+        q0 = np.sqrt(1 - vector[0] ** 2 - vector[1] ** 2 - vector[2] ** 2)
         return q0
 
     def euler_angles(self, measured_quaternion):
@@ -136,9 +136,9 @@ class DeadCopter:
         if measured_quaternion == 0:
             q = self.quaternion
 
-        phi = np.arctan2(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]**2 + q[2]**2))
-        theta = np.arcsin(2*(q[0]*q[2] - q[1]*q[3]))
-        psi = np.arctan2(2*(q[0]*q[3] + q[2]*q[3]), 1 - 2*(q[2]**2 + q[3]**2))
+        phi = np.arctan2(2 * (q[0] * q[1] + q[2] * q[3]), 1 - 2 * (q[1] ** 2 + q[2] ** 2))
+        theta = np.arcsin(2 * (q[0] * q[2] - q[1] * q[3]))
+        psi = np.arctan2(2 * (q[0] * q[3] + q[2] * q[3]), 1 - 2 * (q[2] ** 2 + q[3] ** 2))
         return np.array([phi, theta, psi])
 
     def linearisation(self):
@@ -146,11 +146,11 @@ class DeadCopter:
         b = np.zeros(shape=(9, 3))
         c = np.zeros(shape=(6, 9))
         for i in range(3):
-            a[i, 3+i] = 0.5
-            a[3+i, 6+i] = self.__gamma_n[i, i]
-            a[6+i, 6+i] = -self.__k2
-            b[3+i, i] = self.__gamma_u[i, i]
-            b[6+i, i] = self.__k2 * self.__k1
+            a[i, 3 + i] = 0.5
+            a[3 + i, 6 + i] = self.__gamma_n[i, i]
+            a[6 + i, 6 + i] = -self.__k2
+            b[3 + i, i] = self.__gamma_u[i, i]
+            b[6 + i, i] = self.__k2 * self.__k1
 
         for i in range(6):
             c[i, i] = 1
@@ -166,16 +166,15 @@ class DeadCopter:
         Cd = discrete_system.C
         return Ad, Bd, Cd
 
-
     def linear_fly_simulate(self, u, dt):
         def linear_dynamics(_t, reduced_state):
-            control_action = np.asarray(u).reshape(3,)
+            control_action = np.asarray(u).reshape(3, )
             x = reduced_state[0:3]
             w = reduced_state[3:6]
             n = reduced_state[6:9]
-            x_dot = 0.5*w
-            w_dot = self.__gamma_n@n + self.__gamma_u@control_action
-            n_dot = -self.__k2*n + self.__k1*self.__k2*control_action
+            x_dot = 0.5 * w
+            w_dot = self.__gamma_n @ n + self.__gamma_u @ control_action
+            n_dot = -self.__k2 * n + self.__k1 * self.__k2 * control_action
             return x_dot.tolist() + w_dot.tolist() + n_dot.tolist()
 
         initial_state = self.__state
@@ -188,7 +187,7 @@ class DeadCopter:
 
     def fly_simulate(self, u, dt):
         def dynamics(_t, state):
-            control_action = np.asarray(u).reshape(3,)  # control input
+            control_action = np.asarray(u).reshape(3, )  # control input
             attitude_quat = Quaternion(state[0:4])  # attitude as a quaternion
             angular_freq = state[4:7]  # angular frequencies
             rotor_freq = state[7:10]  # rotor frequencies
@@ -205,6 +204,6 @@ class DeadCopter:
                              [0, dt],
                              self.__state)
         self.__state = solution.y[:, -1]
-        state_noise = np.random.multivariate_normal(np.zeros(3,), self.__disturbance_covariance)
+        state_noise = np.random.multivariate_normal(np.zeros(3, ), self.__disturbance_covariance)
         self.__state[7:10] += state_noise
         self.__state[0:4] = self.normalise_quaternion(self.__state[0:4])
