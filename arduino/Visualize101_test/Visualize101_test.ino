@@ -6,7 +6,7 @@ MPU9250 IMU(Wire,0x68);
 Madgwick filter;
 
 int status;
-unsigned long microsPerReading, microsPrevious;
+unsigned long microsPerReading, microsPerDisplay, microsPreviousRead, microsPreviousDisp;
 float accelScale, gyroScale;
 float q0, q1, q2, q3;
 
@@ -43,10 +43,12 @@ void configure_imu() {
 void configure_filter() {
   float frequency = 125;
   filter.begin(frequency);
-  filter.set_beta(0.7f);
+  filter.set_beta(10.0f);
   // initialize variables to pace updates to correct rate
   microsPerReading = 1000000 / frequency;
-  microsPrevious = micros();
+  microsPerDisplay = 1000000 / 100;
+  microsPreviousRead = micros();
+  microsPreviousDisp = micros();
 }
 
 void calibrate_imu() {
@@ -54,8 +56,8 @@ void calibrate_imu() {
   IMU.calibrateAccel();
   Serial.println("Calibrating gyroscope...");
   IMU.calibrateGyro();
-  Serial.println("Calibrating magnetometer...");
-  IMU.calibrateMag();
+//  Serial.println("Calibrating magnetometer...");
+//  IMU.calibrateMag();
   Serial.println("Done!");
 }
 
@@ -64,7 +66,7 @@ void setup() {
   start_imu_communication();
   configure_imu();
   configure_filter();
-//  calibrate_imu();
+  calibrate_imu();
 }
 
 void loop() {
@@ -77,7 +79,7 @@ void loop() {
 
   // check if it's time to read data and update the filter
   microsNow = micros();
-  if (microsNow - microsPrevious >= microsPerReading) {
+  if (microsNow - microsPreviousRead >= microsPerReading) {
 
     // read IMU and store in buffer
     IMU.readSensor();
@@ -93,30 +95,24 @@ void loop() {
 //    my = IMU.getMagY_uT();
 //    mz = IMU.getMagZ_uT();
 //    temp = IMU.getTemperature_C();
-
+    
     // update the filter, which computes orientation
     filter.updateIMU(-gx, gy, gz, -ax, ay, az, q0, q1, q2, q3);
 
+    microsPreviousRead = microsPreviousRead + microsPerReading;
+  }
+
+  if (microsNow - microsPreviousDisp >= microsPerDisplay) {
     // print the heading, pitch and roll
     roll = filter.getRoll();
     pitch = filter.getPitch();
-    heading = filter.getYaw();
+//    heading = filter.getYaw();
     Serial.print("Orientation: ");
     Serial.print(roll);
     Serial.print(" ");
-    Serial.print(pitch);
-    Serial.print(" ");
-    Serial.print(heading);
-    Serial.print(" ");
-    Serial.print(q0, 4);
-    Serial.print(" ");
-    Serial.print(q1, 4);
-    Serial.print(" ");
-    Serial.print(q2, 4);
-    Serial.print(" ");
-    Serial.println(q3, 4);
+    Serial.println(pitch);
 
     // increment previous time, so we keep proper pace
-    microsPrevious = microsPrevious + microsPerReading;
+    microsPreviousDisp = microsPreviousDisp + microsPerDisplay;
   }
 }

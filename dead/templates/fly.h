@@ -11,7 +11,7 @@
 
 #define RECEIVER_MIN {{receiver_min}}  // minimum pwm input from receiver channel
 #define RECEIVER_MAX {{receiver_max}}  // maximum pwm input from receiver channel
-#define THROTTLE_MAX 3  // (out of 10) max throttle to allow stability control at full throttle
+#define THROTTLE_MAX 300  // (max 1850) max throttle to allow stability control at full throttle
 #define MAX_COPTER_ANGLE {{max_angle}}*DEG_TO_RAD  // maximum angle the quadcopter can tilt from upright
 
 class Fly {
@@ -40,10 +40,10 @@ class Fly {
 
     // for formatting into output to motor
     float output_to_motor[4] = {0};  // motor pwm from calculations
-    float motor_proportions[4][4] = {{ '{{' }}1.0, 1.0, 1.0, 1.0},
-                                     {1.0, {{ '-' }}1.0, 1.0, {{ '-' }}1.0},
-                                     {1.0, 1.0, {{ '-' }}1.0, {{ '-' }}1.0},
-                                     {1.0, {{ '-' }}1.0, {{ '-' }}1.0, 1.0{{ '}}' }};  // motor_speeds = motor_proportions * throttle_and_control
+    float motor_proportions[4][4] = {{ '{{' }}1.0, {{motor_gain}}.0, {{motor_gain}}.0, {{motor_gain}}.0},
+                                     {1.0, {{ '-' }}{{motor_gain}}.0, {{motor_gain}}.0, {{ '-' }}{{motor_gain}}.0},
+                                     {1.0, {{motor_gain}}.0, {{ '-' }}{{motor_gain}}.0, {{ '-' }}{{motor_gain}}.0},
+                                     {1.0, {{ '-' }}{{motor_gain}}.0, {{ '-' }}{{motor_gain}}.0, {{motor_gain}}.0{{ '}}' }};  // motor_speeds = motor_proportions * throttle_and_control
 
     // for solving quaternion differences
     float solve_q0(float q1, float q2, float q3);
@@ -148,50 +148,6 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
 void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
                               float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
                               float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
-    // find x and u equilibrium values
-    {% for count in range(3) -%}
-    r_short[{{count}}] = r[{{count}}];
-    {% endfor -%}
-    {% for row in range(12) -%}
-    xu_e[{{row}}] =
-        {%- for col in range(3) -%}
-        {{' '}}+ G[{{row}}][{{col}}]*r_short[{{col}}]
-        {%- endfor -%}
-    ;
-    {% endfor %}
-
-    // find x difference (x_hat - x_e)
-    q0_x_hat = solve_q0(x_hat[0], x_hat[1], x_hat[2]);
-    q0_x_e = solve_q0(xu_e[0], xu_e[1], xu_e[2]);
-    quaternion_difference(q0_x_hat, x_hat[0], x_hat[1], x_hat[2],
-                          q0_x_e, xu_e[0], xu_e[1], xu_e[2],
-                          q0_x_diff, x_diff[0], x_diff[1], x_diff[2]);
-    {% for count in range(3,9) -%}
-    x_diff[{{count}}] = x_hat[{{count}}] - xu_e[{{count}}];
-    {% endfor %}
-
-    // find control action matrix, u
-    {% for row in range(3) -%}
-    throttle_and_u[{{row+1}}] = xu_e[{{row+9}}]
-        {%- for col in range(9) -%}
-        {{' '}}+ K[{{row}}][{{col}}]*x_diff[{{col}}]
-        {%- endfor -%}
-    ;
-    {% endfor %}
-
-    // format into control output for motors
-    throttle_and_u[0] = (fly_throttle - (float) RECEIVER_MIN) * ((float) THROTTLE_MAX) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN);  // form matrix of throttle on top of u;  // form matrix of throttle on top of u
-    {% for row in range(4) -%}
-    output_to_motor[{{row}}] =
-        {%- for col in range(4) -%}
-        {{' '}}+ motor_proportions[{{row}}][{{col}}]*throttle_and_u[{{col}}]
-        {%- endfor -%}
-    ;
-    {% endfor -%}
-    fly_front_left = ceil(output_to_motor[0]*100.0f + 1000.0f);
-    fly_front_right = ceil(output_to_motor[1]*100.0f + 1000.0f);
-    fly_back_left = ceil(output_to_motor[2]*100.0f + 1000.0f);
-    fly_back_right = ceil(output_to_motor[3]*100.0f + 1000.0f);
 
     // find observed y_hat
     {% for row in range(6) -%}
@@ -228,6 +184,51 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
         {%- endfor -%}
     ;
     {% endfor %}
+
+    // find x and u equilibrium values
+    {% for count in range(3) -%}
+    r_short[{{count}}] = r[{{count}}];
+    {% endfor -%}
+    {% for row in range(12) -%}
+    xu_e[{{row}}] =
+        {%- for col in range(3) -%}
+        {{' '}}+ G[{{row}}][{{col}}]*r_short[{{col}}]
+        {%- endfor -%}
+    ;
+    {% endfor %}
+
+    // find x difference (x_hat - x_e)
+    q0_x_hat = solve_q0(x_hat[0], x_hat[1], x_hat[2]);
+    q0_x_e = solve_q0(xu_e[0], xu_e[1], xu_e[2]);
+    quaternion_difference(q0_x_hat, x_hat[0], x_hat[1], x_hat[2],
+                          q0_x_e, xu_e[0], xu_e[1], xu_e[2],
+                          q0_x_diff, x_diff[0], x_diff[1], x_diff[2]);
+    {% for count in range(3,9) -%}
+    x_diff[{{count}}] = x_hat[{{count}}] - xu_e[{{count}}];
+    {% endfor %}
+
+    // find control action matrix, u
+    {% for row in range(3) -%}
+    throttle_and_u[{{row+1}}] = xu_e[{{row+9}}]
+        {%- for col in range(9) -%}
+        {{' '}}+ K[{{row}}][{{col}}]*x_diff[{{col}}]
+        {%- endfor -%}
+    ;
+    {% endfor %}
+
+    // format into control output for motors
+    throttle_and_u[0] = (fly_throttle - (float) RECEIVER_MIN) * ((float) THROTTLE_MAX) / ((float) RECEIVER_MAX - (float) RECEIVER_MIN);  // form matrix of throttle on top of u
+    {% for row in range(4) -%}
+    output_to_motor[{{row}}] =
+        {%- for col in range(4) -%}
+        {{' '}}+ motor_proportions[{{row}}][{{col}}]*throttle_and_u[{{col}}]
+        {%- endfor -%}
+    ;
+    {% endfor -%}
+    fly_front_left = ceil(output_to_motor[0] + 1000.0f);
+    fly_front_right = 1000; // ceil(output_to_motor[1] + 1000.0f);
+    fly_back_left = 1000; // ceil(output_to_motor[2] + 1000.0f);
+    fly_back_right = ceil(output_to_motor[3] + 1000.0f);
 
     // if control action result is nan, reset x_hat and y_hat
     if(isnan(throttle_and_u[1]) || isnan(throttle_and_u[2]) || isnan(throttle_and_u[3])) {

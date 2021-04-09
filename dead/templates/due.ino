@@ -159,15 +159,15 @@ void loop() {
             Serial.print(_u2, 7);Serial.print("\t");
 
             Serial.print(q0y, 7);Serial.print("\t");
-            Serial.print(_y0, 7);Serial.print("\t");
-            Serial.print(_y1, 7);Serial.print("\t");
-            Serial.print(_y2, 7);Serial.print("\t");
+//             Serial.print(_y0, 7);Serial.print("\t");
+//             Serial.print(_y1, 7);Serial.print("\t");
+//             Serial.print(_y2, 7);Serial.print("\t");
 
             Serial.print(due_motors.get_arm_status());Serial.print("\t");
             Serial.print(due_throttle);Serial.print("\t");
-            Serial.print(due_yaw);Serial.print("\t");
-            Serial.print(due_pitch);Serial.print("\t");
-            Serial.print(due_roll);Serial.print("\t");
+//             Serial.print(due_yaw);Serial.print("\t");
+//             Serial.print(due_pitch);Serial.print("\t");
+//             Serial.print(due_roll);Serial.print("\t");
 
             Serial.print(due_front_left);Serial.print("\t");
             Serial.print(due_front_right);Serial.print("\t");
