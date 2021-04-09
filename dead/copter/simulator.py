@@ -81,6 +81,7 @@ class Simulator:
             full_difference = difference_quaternion.elements[1:4].tolist() + difference_state.tolist()
 
             control_action = xu_equilibriums[self.__n_control:self.__n_control + self.__n_observe] + self.__gain_K_lqr @ full_difference
+            # control_action = np.matrix((0, 0, 0))
 
             copter.fly_simulate(control_action, self.__t_sampling)
 
