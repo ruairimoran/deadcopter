@@ -8,7 +8,7 @@ class Simulator:
     def __init__(self, **kwargs):
         self.__t_sampling = 0.01             # 10 ms
         self.__t_simulation = 2              # simulation time (in s)
-        self.__measurement_noise_multiplier = 1e-1    # imu noise
+        self.__measurement_noise_multiplier = 1e-9    # imu noise
 
         # parse `kwargs` and set as attribute, provided the keyword corresponds
         # to one of the variables defined above
@@ -52,11 +52,11 @@ class Simulator:
         return self.__Ad, self.__Bd, self.__Cd, self.__gain_K_lqr, self.__gain_L_Kf, self.__G
 
     def simulate(self, copter):
-        copter.state = np.array((0.9994, 0.0044, 0.0251, 0.0249, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0))  # initial state offset from equilibrium
+        copter.state = [0.9994, 0.0044, 0.0251, 0.0249, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0]  # initial state offset from equilibrium
         state_cache = copter.state
-        euler_state_cache = copter.euler_angles((0, 0, 0, 0))  # 0 for use of state
+        euler_state_cache = copter.euler_angles(0)  # 0 for use of state
 
-        state_hat = np.array((1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+        state_hat = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         state_hat_cache = state_hat
         euler_state_hat_cache = copter.euler_angles(state_hat[0:4])
 
@@ -65,73 +65,51 @@ class Simulator:
         r = np.zeros(6,)
 
         for k in range(self.__num_simulation_points):
+            if k > self.__num_simulation_points/2:
+                r = [0.0044, 0.0251, 0.0249, 0, 0, 0]
 
-            # find imu measurement y with noise
-            measurement_noise_quaternion = Quaternion.random()
-            measurement_noise_omega = self.__measurement_noise_multiplier * np.random.multivariate_normal(np.zeros((3,)), np.identity(3))
-            y = np.asarray(self.__Cd @ copter.state[1:10]).reshape(6,)
-            y_quaternion = Quaternion(w=copter.solve_q0(y[0:3]), x=y[0], y=y[1], z=y[2])
-            y_noisy_quaternion = y_quaternion * measurement_noise_quaternion
-            y[0:3] += y_noisy_quaternion.elements[1:4]
-            y[3:6] += measurement_noise_omega
+            v_omega = np.random.multivariate_normal(np.zeros((6,)), np.identity(6))
+            y = np.asarray(self.__Cd @ copter.state[1:10]).reshape(6, )
+            y += (self.__measurement_noise_multiplier * v_omega)
 
-            # find observed output y_hat
-            y_hat = np.asarray(self.__Cd @ state_hat[1:10]).reshape(6,)
-
-            # find y_hat - y
-            y_hat_quaternion = Quaternion(w=copter.solve_q0(y_hat[0:3]), x=y_hat[0], y=y_hat[1], z=y_hat[2])
-            y_quaternion_difference = y_hat_quaternion * y_noisy_quaternion.inverse
-            y_omega_difference = y_hat[3:6] - y[3:6]
-            y_difference = np.concatenate((y_quaternion_difference.elements[1:4], y_omega_difference))
-
-            # find xu^e
             xu_equilibriums = self.__G @ r
+            state_quaternion = Quaternion(copter.quaternion)
             xu_equilibriums_q0 = copter.solve_q0(xu_equilibriums[0:3])
             xu_equilibriums_quaternion = Quaternion(xu_equilibriums_q0, xu_equilibriums[0], xu_equilibriums[1], xu_equilibriums[2])
+            difference_quaternion = state_quaternion * xu_equilibriums_quaternion.inverse
+            difference_state = np.array(copter.state[4:10]) - np.array(xu_equilibriums[3:9])
+            full_difference = difference_quaternion.elements[1:4].tolist() + difference_state.tolist()
 
-            # find full observed state state_hat
-            reduced_state_hat = np.asarray((self.__Ad @ state_hat[1:10]) + (self.__Bd @ control_action.T) + (self.__gain_L_Kf @ y_difference))
-            state_hat_q0 = 1#copter.solve_q0(reduced_state_hat.T[0:3])
-            state_hat = np.insert(reduced_state_hat, 0, state_hat_q0)
+            control_action = xu_equilibriums[self.__n_control:self.__n_control + self.__n_observe] + self.__gain_K_lqr @ full_difference
 
-            # # find state - x^e
-            # state_quaternion = Quaternion(copter.quaternion)
-            # state_quaternion_difference = state_quaternion * xu_equilibriums_quaternion.inverse
-            # state_omega_and_n_difference = np.array(copter.state[4:10]) - np.array(xu_equilibriums[3:9])
-            # actual_state_difference = np.concatenate((state_quaternion_difference.elements[1:4], state_omega_and_n_difference))
-
-            # find state_hat - x^e
-            state_hat_quaternion = Quaternion(state_hat[0:4])
-            state_hat_quaternion_difference = state_hat_quaternion * xu_equilibriums_quaternion.inverse
-            state_hat_omega_and_n_difference = state_hat[4:10] - xu_equilibriums[3:9]
-            observed_state_difference = np.concatenate((state_hat_quaternion_difference.elements[1:4], state_hat_omega_and_n_difference))
-
-            # find control actions u_x, u_y, u_z
-            control_action = xu_equilibriums[self.__n_control:self.__n_control+self.__n_observe] + (self.__gain_K_lqr @ observed_state_difference)
-
-            # simulate copter response
             copter.fly_simulate(control_action, self.__t_sampling)
 
+            y_hat = np.asarray(self.__Cd @ state_hat[1:10]).reshape(6,)
+
+            state_hat = np.asarray(self.__Ad @ state_hat[1:10] + (self.__Bd @ control_action.T).T + self.__gain_L_Kf @ (y_hat - y)).reshape(9, )
+            state_hat_q0 = copter.solve_q0(state_hat[0:3])
+            state_hat = [state_hat_q0] + state_hat.tolist()
+
             # cache
-            euler_state_cache = np.vstack((euler_state_cache, copter.euler_angles((0, 0, 0, 0))))  # 0 state
+            euler_state_cache = np.vstack((euler_state_cache, copter.euler_angles(0)))  # 0 state
             euler_state_hat_cache = np.vstack((euler_state_hat_cache, copter.euler_angles(state_hat[0:4])))
-            control_action_cache = np.vstack((control_action_cache, control_action))
+            control_action_cache = np.vstack((control_action_cache, np.asarray(control_action)))
             state_cache = np.vstack((state_cache, copter.state))
             state_hat_cache = np.vstack((state_hat_cache, state_hat))
 
         return euler_state_cache, euler_state_hat_cache, control_action_cache, state_cache, state_hat_cache
 
     def plot_all(self,
-                 euler_angle_cache, euler_state_hat_cache,
-                 control_action_cache,
-                 state_cache, state_hat_cache):
+                 plot_euler_angle_cache, plot_euler_state_hat_cache,
+                 plot_control_action_cache,
+                 plot_state_cache, plot_state_hat_cache):
         plt.rcParams.update({'font.size': 18})
         plt.subplots_adjust(left=0.08, bottom=0.08, right=0.98, top=0.94, wspace=0.27, hspace=0.43)
 
         # plot euler angles cache
         plt.subplot(2, 2, 1)
-        plt.plot(self.t_span, np.rad2deg(euler_angle_cache))
-        plt.plot(self.t_span, np.rad2deg(euler_state_hat_cache), '--')
+        plt.plot(self.t_span, np.rad2deg(plot_euler_angle_cache))
+        plt.plot(self.t_span, np.rad2deg(plot_euler_state_hat_cache), '--')
         plt.title("Euler angles")
         plt.legend(["roll(x)", "pitch(y)", "yaw(z)", "roll_est.", "pitch_est.", "yaw_est."], loc="upper right")
         plt.ylabel("degrees")
@@ -140,8 +118,8 @@ class Simulator:
 
         # # plot quaternion cache
         # plt.subplot(2, 2, 2)
-        # plt.plot(self.t_span, state_cache[:, 0:4])
-        # plt.plot(self.t_span, state_hat_cache[:, 0:4], '--')
+        # plt.plot(self.t_span, plot_state_cache[:, 0:4])
+        # plt.plot(self.t_span, plot_state_hat_cache[:, 0:4], '--')
         # plt.title("quaternion")
         # plt.legend(["q0", "q1", "q2", "q3", "q0_est.", "q1_est.", "q2_est.", "q3_est."], loc="upper right")
         # plt.ylim([-0.03, 0.03])
@@ -151,7 +129,7 @@ class Simulator:
 
         # plot control action cache
         plt.subplot(2, 2, 2)
-        plt.plot(self.t_span, control_action_cache)
+        plt.plot(self.t_span, plot_control_action_cache)
         plt.title("control action")
         plt.legend(["ux", "uy", "uz"], loc="upper right")
         plt.ylabel("arbitrary")
@@ -160,8 +138,8 @@ class Simulator:
 
         # plot angular frequency cache
         plt.subplot(2, 2, 3)
-        plt.plot(self.t_span, state_cache[:, 4:7])
-        plt.plot(self.t_span, state_hat_cache[:, 4:7], '--')
+        plt.plot(self.t_span, plot_state_cache[:, 4:7])
+        plt.plot(self.t_span, plot_state_hat_cache[:, 4:7], '--')
         plt.title("angular rate")
         plt.legend(["wx", "wy", "wz", "wx_est.", "wy_est.", "wz_est."], loc="upper right")
         plt.ylabel("rad/s")
@@ -170,8 +148,8 @@ class Simulator:
 
         # plot rotation frequency cache
         plt.subplot(2, 2, 4)
-        plt.plot(self.t_span, state_cache[:, 7:10])
-        plt.plot(self.t_span, state_hat_cache[:, 7:10], '--')
+        plt.plot(self.t_span, plot_state_cache[:, 7:10])
+        plt.plot(self.t_span, plot_state_hat_cache[:, 7:10], '--')
         plt.title("deviation from hovering spin")
         plt.legend(["nx", "ny", "nz", "nx_est.", "ny_est.", "nz_est."], loc="upper right")
         plt.ylabel("revolutions/s")
