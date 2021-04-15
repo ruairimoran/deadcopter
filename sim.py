@@ -21,6 +21,6 @@ print(f"K = {K} \n"
       f"L = {L} \n"
       f"h = {h}")
 
-sim_euler_state_cache, sim_euler_state_hat_cache, sim_control_action_cache, sim_state_cache, sim_state_hat_cache = sim.simulate(copter)
+sim_euler_state_cache, sim_euler_state_hat_cache, sim_control_action_cache, sim_state_cache, sim_state_hat_cache, sim_r_cache = sim.simulate(copter)
 
-sim.plot_all(sim_euler_state_cache, sim_euler_state_hat_cache, sim_control_action_cache, sim_state_cache, sim_state_hat_cache)
+sim.plot_all(sim_euler_state_cache, sim_euler_state_hat_cache, sim_control_action_cache, sim_state_cache, sim_state_hat_cache, sim_r_cache)
