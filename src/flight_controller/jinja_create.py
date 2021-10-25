@@ -9,7 +9,7 @@ timestamp = datetime.datetime.utcnow()
 # ----------------------------------------------------------------------------------------------------------------------#
 # run simulator to get constant matrices
 
-# copter intialisation
+# flight_controller intialisation
 copter = dead.copter.copter.DeadCopter(mass=1.4,  # mass of entire copter in kg
                                        arm_length=0.225,  # half the distance between two opposite motors in m
                                        K_v=1000,  # Kv rating of the motors
@@ -75,7 +75,7 @@ _G = reformat_matrix_to_array(G)
 # ----------------------------------------------------------------------------------------------------------------------#
 # setup jinja environment
 
-file_loader = jinja2.FileSystemLoader('../templates')
+file_loader = jinja2.FileSystemLoader('../jinja_templates')
 env = jinja2.Environment(loader=file_loader, autoescape=True)
 
 # ----------------------------------------------------------------------------------------------------------------------#
