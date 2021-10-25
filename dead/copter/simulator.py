@@ -63,6 +63,7 @@ class Simulator:
         control_action = np.zeros((3,))
         control_action_cache = control_action
         r = np.zeros(6,)
+        r_cache = r[0:3]
 
         for k in range(self.__num_simulation_points):
             if k > self.__num_simulation_points/2:
@@ -81,6 +82,7 @@ class Simulator:
             full_difference = difference_quaternion.elements[1:4].tolist() + difference_state.tolist()
 
             control_action = xu_equilibriums[self.__n_control:self.__n_control + self.__n_observe] + self.__gain_K_lqr @ full_difference
+            # control_action = np.matrix((0, 0, 0))
 
             copter.fly_simulate(control_action, self.__t_sampling)
 
@@ -96,63 +98,80 @@ class Simulator:
             control_action_cache = np.vstack((control_action_cache, np.asarray(control_action)))
             state_cache = np.vstack((state_cache, copter.state))
             state_hat_cache = np.vstack((state_hat_cache, state_hat))
+            r_quaternion = [copter.solve_q0(r[0:3]), r[0], r[1], r[2]]
+            r_cache = np.vstack((r_cache, copter.euler_angles(r_quaternion)))
 
-        return euler_state_cache, euler_state_hat_cache, control_action_cache, state_cache, state_hat_cache
+        return euler_state_cache, euler_state_hat_cache, control_action_cache, state_cache, state_hat_cache, r_cache
 
     def plot_all(self,
                  plot_euler_angle_cache, plot_euler_state_hat_cache,
                  plot_control_action_cache,
-                 plot_state_cache, plot_state_hat_cache):
+                 plot_state_cache, plot_state_hat_cache,
+                 plot_r_cache):
         plt.rcParams.update({'font.size': 18})
-        plt.subplots_adjust(left=0.08, bottom=0.08, right=0.98, top=0.94, wspace=0.27, hspace=0.43)
+        plot = 0  # 0 for orientation graph only, 1 for all graphs
+
+        if plot == 1:
+            plt.subplots_adjust(left=0.08, bottom=0.08, right=0.98, top=0.94, wspace=0.27, hspace=0.43)
+
+            # plot euler angles cache
+            plt.subplot(2, 2, 1)
+            plt.plot(self.t_span, np.rad2deg(plot_euler_angle_cache))
+            plt.plot(self.t_span, np.rad2deg(plot_euler_state_hat_cache), '--')
+            plt.plot(self.t_span, np.rad2deg(plot_r_cache), '--')
+            plt.title("Euler angles")
+            plt.legend(["roll(x)", "pitch(y)", "yaw(z)", "roll_est.", "pitch_est.", "yaw_est."], loc="upper right")
+            plt.ylabel("degrees")
+            plt.xlabel("time /s")
+            plt.grid()
+
+            # # plot quaternion cache
+            # plt.subplot(2, 2, 2)
+            # plt.plot(self.t_span, plot_state_cache[:, 0:4])
+            # plt.plot(self.t_span, plot_state_hat_cache[:, 0:4], '--')
+            # plt.title("quaternion")
+            # plt.legend(["q0", "q1", "q2", "q3", "q0_est.", "q1_est.", "q2_est.", "q3_est."], loc="upper right")
+            # plt.ylim([-0.03, 0.03])
+            # plt.ylabel("arbitrary")
+            # plt.xlabel("time /s")
+            # plt.grid()
+
+            # plot control action cache
+            plt.subplot(2, 2, 2)
+            plt.plot(self.t_span, plot_control_action_cache)
+            plt.title("control action")
+            plt.legend(["ux", "uy", "uz"], loc="upper right")
+            plt.ylabel("arbitrary")
+            plt.xlabel("time /s")
+            plt.grid()
+
+            # plot angular frequency cache
+            plt.subplot(2, 2, 3)
+            plt.plot(self.t_span, plot_state_cache[:, 4:7])
+            plt.plot(self.t_span, plot_state_hat_cache[:, 4:7], '--')
+            plt.title("angular rate")
+            plt.legend(["wx", "wy", "wz", "wx_est.", "wy_est.", "wz_est."], loc="upper right")
+            plt.ylabel("rad/s")
+            plt.xlabel("time /s")
+            plt.grid()
+
+            # plot rotation frequency cache
+            plt.subplot(2, 2, 4)
+            plt.plot(self.t_span, plot_state_cache[:, 7:10])
+            plt.plot(self.t_span, plot_state_hat_cache[:, 7:10], '--')
+            plt.title("deviation from hovering spin")
+            plt.legend(["nx", "ny", "nz", "nx_est.", "ny_est.", "nz_est."], loc="upper right")
+            plt.ylabel("revolutions/s")
+            plt.xlabel("time /s")
+            plt.grid()
 
         # plot euler angles cache
-        plt.subplot(2, 2, 1)
         plt.plot(self.t_span, np.rad2deg(plot_euler_angle_cache))
         plt.plot(self.t_span, np.rad2deg(plot_euler_state_hat_cache), '--')
+        plt.plot(self.t_span, np.rad2deg(plot_r_cache), '--', linewidth=3)
         plt.title("Euler angles")
-        plt.legend(["roll(x)", "pitch(y)", "yaw(z)", "roll_est.", "pitch_est.", "yaw_est."], loc="upper right")
+        plt.legend(["roll(x)", "pitch(y)", "yaw(z)", "roll_est.", "pitch_est.", "yaw_est.", "roll_ref.", "pitch_ref.", "yaw_ref."], loc="upper right")
         plt.ylabel("degrees")
-        plt.xlabel("time /s")
-        plt.grid()
-
-        # # plot quaternion cache
-        # plt.subplot(2, 2, 2)
-        # plt.plot(self.t_span, plot_state_cache[:, 0:4])
-        # plt.plot(self.t_span, plot_state_hat_cache[:, 0:4], '--')
-        # plt.title("quaternion")
-        # plt.legend(["q0", "q1", "q2", "q3", "q0_est.", "q1_est.", "q2_est.", "q3_est."], loc="upper right")
-        # plt.ylim([-0.03, 0.03])
-        # plt.ylabel("arbitrary")
-        # plt.xlabel("time /s")
-        # plt.grid()
-
-        # plot control action cache
-        plt.subplot(2, 2, 2)
-        plt.plot(self.t_span, plot_control_action_cache)
-        plt.title("control action")
-        plt.legend(["ux", "uy", "uz"], loc="upper right")
-        plt.ylabel("arbitrary")
-        plt.xlabel("time /s")
-        plt.grid()
-
-        # plot angular frequency cache
-        plt.subplot(2, 2, 3)
-        plt.plot(self.t_span, plot_state_cache[:, 4:7])
-        plt.plot(self.t_span, plot_state_hat_cache[:, 4:7], '--')
-        plt.title("angular rate")
-        plt.legend(["wx", "wy", "wz", "wx_est.", "wy_est.", "wz_est."], loc="upper right")
-        plt.ylabel("rad/s")
-        plt.xlabel("time /s")
-        plt.grid()
-
-        # plot rotation frequency cache
-        plt.subplot(2, 2, 4)
-        plt.plot(self.t_span, plot_state_cache[:, 7:10])
-        plt.plot(self.t_span, plot_state_hat_cache[:, 7:10], '--')
-        plt.title("deviation from hovering spin")
-        plt.legend(["nx", "ny", "nz", "nx_est.", "ny_est.", "nz_est."], loc="upper right")
-        plt.ylabel("revolutions/s")
         plt.xlabel("time /s")
         plt.grid()
 
