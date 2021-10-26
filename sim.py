@@ -1,18 +1,18 @@
-import src
+import deadcopter.src.flight_controller as fc
 
-# flight_controller intialisation
-copter = src.flight_controller.copter.DeadCopter(disturbance_level=1e-1,
-                                      mass=1.8,
-                                      arm_length=0.225,
-                                      K_v=1000,
-                                      voltage_max=16.8,
-                                      voltage_min=1.68,
-                                      prop_diameter_in=8)
+# flight_controller initialisation
+copter = fc.copter.DeadCopter(disturbance_level=1e-1,
+                              mass=1.8,
+                              arm_length=0.225,
+                              K_v=1000,
+                              voltage_max=16.8,
+                              voltage_min=1.68,
+                              prop_diameter_in=8)
 
-# simulator intialisation
-sim = src.flight_controller.simulator.Simulator(t_simulation=1,
-                                     t_sampling=1/125,
-                                     measurement_noise_multiplier=1e-4)
+# simulator initialisation
+sim = fc.simulator.Simulator(t_simulation=1,
+                             t_sampling=1/125,
+                             measurement_noise_multiplier=1e-4)
 
 # System design
 Ad, Bd, Cd, K, L, G = sim.system_design(copter)

@@ -1,4 +1,4 @@
-// 2021-03-28 15:36:31.943719
+// 2021-10-26 13:36:49.965797
 
 #ifndef fly.h
 #define fly.h
@@ -58,15 +58,15 @@ class Fly {
 {0.,0.,0.,1.,0.,0.,0.,0.,0.},
 {0.,0.,0.,0.,1.,0.,0.,0.,0.},
 {0.,0.,0.,0.,0.,1.,0.,0.,0.}};  // discrete C array
-    float K[3][9] = {{-1.04714011e+01, -0.00000000e+00, -0.00000000e+00, -3.38963231e-01
-,-0.00000000e+00, -0.00000000e+00, -1.28858005e-02, -0.00000000e+00
+    float K[3][9] = {{-2.33229011e+01, -0.00000000e+00, -0.00000000e+00, -9.29486388e-01
+,-0.00000000e+00, -0.00000000e+00, -2.37096409e-02, -0.00000000e+00
 ,-0.00000000e+00},
- {-0.00000000e+00, -1.11702722e+01, -0.00000000e+00, -0.00000000e+00
-,-4.06915578e-01, -0.00000000e+00, -0.00000000e+00, -1.04296501e-02
+ {-0.00000000e+00, -2.70647008e+01, -0.00000000e+00, -0.00000000e+00
+,-1.12462326e+00, -0.00000000e+00, -0.00000000e+00, -1.95683459e-02
 ,-0.00000000e+00},
- {-0.00000000e+00, -0.00000000e+00, -2.07278855e+00, -0.00000000e+00
-,-0.00000000e+00, -6.71892922e-01, -0.00000000e+00, -0.00000000e+00
-, 3.31183218e-03}};  // LQR gain for state control
+ {-0.00000000e+00, -0.00000000e+00, -6.58271221e-01, -0.00000000e+00
+,-0.00000000e+00, -6.63864461e-01, -0.00000000e+00, -0.00000000e+00
+, 3.26693037e-03}};  // LQR gain for state control
     float L[9][6] = {{-5.00007719e-01, -0.00000000e+00, -0.00000000e+00, -3.36136058e-03
 ,-0.00000000e+00, -0.00000000e+00},
  {-0.00000000e+00, -5.00006921e-01, -0.00000000e+00, -0.00000000e+00
@@ -115,10 +115,10 @@ class Fly {
 
     // for formatting into output to motor
     float output_to_motor[4] = {0};  // motor pwm from calculations
-    float motor_proportions[4][4] = {{1.0, 30.0, 30.0, 30.0},
-                                     {1.0, -30.0, 30.0, -30.0},
-                                     {1.0, 30.0, -30.0, -30.0},
-                                     {1.0, -30.0, -30.0, 30.0}};  // motor_speeds = motor_proportions * throttle_and_control
+    float motor_proportions[4][4] = {{1.0, 11.0, 11.0, 11.0},
+                                     {1.0, -11.0, 11.0, -11.0},
+                                     {1.0, 11.0, -11.0, -11.0},
+                                     {1.0, -11.0, -11.0, 11.0}};  // motor_speeds = motor_proportions * throttle_and_control
 
     // for solving quaternion differences
     float solve_q0(float q1, float q2, float q3);
@@ -223,6 +223,47 @@ void Fly::set_matrix_r_and_y(float fly_roll, float fly_pitch, float fly_yaw,
 void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_front_right, int &fly_back_left, int &fly_back_right,
                               float &f_u0, float &f_u1, float &f_u2, float &fq0y, float &f_y0,
                               float &f_y1, float &f_y2, float &f_y3, float &f_y4, float &f_y5) {
+
+    // find observed y_hat
+    y_hat[0] = + Cd[0][0]*x_hat[0] + Cd[0][1]*x_hat[1] + Cd[0][2]*x_hat[2] + Cd[0][3]*x_hat[3] + Cd[0][4]*x_hat[4] + Cd[0][5]*x_hat[5] + Cd[0][6]*x_hat[6] + Cd[0][7]*x_hat[7] + Cd[0][8]*x_hat[8];
+    y_hat[1] = + Cd[1][0]*x_hat[0] + Cd[1][1]*x_hat[1] + Cd[1][2]*x_hat[2] + Cd[1][3]*x_hat[3] + Cd[1][4]*x_hat[4] + Cd[1][5]*x_hat[5] + Cd[1][6]*x_hat[6] + Cd[1][7]*x_hat[7] + Cd[1][8]*x_hat[8];
+    y_hat[2] = + Cd[2][0]*x_hat[0] + Cd[2][1]*x_hat[1] + Cd[2][2]*x_hat[2] + Cd[2][3]*x_hat[3] + Cd[2][4]*x_hat[4] + Cd[2][5]*x_hat[5] + Cd[2][6]*x_hat[6] + Cd[2][7]*x_hat[7] + Cd[2][8]*x_hat[8];
+    y_hat[3] = + Cd[3][0]*x_hat[0] + Cd[3][1]*x_hat[1] + Cd[3][2]*x_hat[2] + Cd[3][3]*x_hat[3] + Cd[3][4]*x_hat[4] + Cd[3][5]*x_hat[5] + Cd[3][6]*x_hat[6] + Cd[3][7]*x_hat[7] + Cd[3][8]*x_hat[8];
+    y_hat[4] = + Cd[4][0]*x_hat[0] + Cd[4][1]*x_hat[1] + Cd[4][2]*x_hat[2] + Cd[4][3]*x_hat[3] + Cd[4][4]*x_hat[4] + Cd[4][5]*x_hat[5] + Cd[4][6]*x_hat[6] + Cd[4][7]*x_hat[7] + Cd[4][8]*x_hat[8];
+    y_hat[5] = + Cd[5][0]*x_hat[0] + Cd[5][1]*x_hat[1] + Cd[5][2]*x_hat[2] + Cd[5][3]*x_hat[3] + Cd[5][4]*x_hat[4] + Cd[5][5]*x_hat[5] + Cd[5][6]*x_hat[6] + Cd[5][7]*x_hat[7] + Cd[5][8]*x_hat[8];
+    
+
+    // find y difference (y_hat - y)
+    q0_y_hat = solve_q0(y_hat[0], y_hat[1], y_hat[2]);
+    quaternion_difference(q0_y_hat, y_hat[0], y_hat[1], y_hat[2],
+                          q0_y, y[0], y[1], y[2],
+                          q0_y_diff, y_diff[0], y_diff[1], y_diff[2]);
+    y_diff[3] = y_hat[3] - y[3];
+    y_diff[4] = y_hat[4] - y[4];
+    y_diff[5] = y_hat[5] - y[5];
+    
+
+    // find observed x_hat
+    x_hat_buffer[0] = x_hat[0];
+    x_hat_buffer[1] = x_hat[1];
+    x_hat_buffer[2] = x_hat[2];
+    x_hat_buffer[3] = x_hat[3];
+    x_hat_buffer[4] = x_hat[4];
+    x_hat_buffer[5] = x_hat[5];
+    x_hat_buffer[6] = x_hat[6];
+    x_hat_buffer[7] = x_hat[7];
+    x_hat_buffer[8] = x_hat[8];
+    x_hat[0] = + Ad[0][0]*x_hat_buffer[0] + Ad[0][1]*x_hat_buffer[1] + Ad[0][2]*x_hat_buffer[2] + Ad[0][3]*x_hat_buffer[3] + Ad[0][4]*x_hat_buffer[4] + Ad[0][5]*x_hat_buffer[5] + Ad[0][6]*x_hat_buffer[6] + Ad[0][7]*x_hat_buffer[7] + Ad[0][8]*x_hat_buffer[8] + Bd[0][0]*throttle_and_u[1] + Bd[0][1]*throttle_and_u[2] + Bd[0][2]*throttle_and_u[3] + L[0][0]*y_diff[0] + L[0][1]*y_diff[1] + L[0][2]*y_diff[2] + L[0][3]*y_diff[3] + L[0][4]*y_diff[4] + L[0][5]*y_diff[5];
+    x_hat[1] = + Ad[1][0]*x_hat_buffer[0] + Ad[1][1]*x_hat_buffer[1] + Ad[1][2]*x_hat_buffer[2] + Ad[1][3]*x_hat_buffer[3] + Ad[1][4]*x_hat_buffer[4] + Ad[1][5]*x_hat_buffer[5] + Ad[1][6]*x_hat_buffer[6] + Ad[1][7]*x_hat_buffer[7] + Ad[1][8]*x_hat_buffer[8] + Bd[1][0]*throttle_and_u[1] + Bd[1][1]*throttle_and_u[2] + Bd[1][2]*throttle_and_u[3] + L[1][0]*y_diff[0] + L[1][1]*y_diff[1] + L[1][2]*y_diff[2] + L[1][3]*y_diff[3] + L[1][4]*y_diff[4] + L[1][5]*y_diff[5];
+    x_hat[2] = + Ad[2][0]*x_hat_buffer[0] + Ad[2][1]*x_hat_buffer[1] + Ad[2][2]*x_hat_buffer[2] + Ad[2][3]*x_hat_buffer[3] + Ad[2][4]*x_hat_buffer[4] + Ad[2][5]*x_hat_buffer[5] + Ad[2][6]*x_hat_buffer[6] + Ad[2][7]*x_hat_buffer[7] + Ad[2][8]*x_hat_buffer[8] + Bd[2][0]*throttle_and_u[1] + Bd[2][1]*throttle_and_u[2] + Bd[2][2]*throttle_and_u[3] + L[2][0]*y_diff[0] + L[2][1]*y_diff[1] + L[2][2]*y_diff[2] + L[2][3]*y_diff[3] + L[2][4]*y_diff[4] + L[2][5]*y_diff[5];
+    x_hat[3] = + Ad[3][0]*x_hat_buffer[0] + Ad[3][1]*x_hat_buffer[1] + Ad[3][2]*x_hat_buffer[2] + Ad[3][3]*x_hat_buffer[3] + Ad[3][4]*x_hat_buffer[4] + Ad[3][5]*x_hat_buffer[5] + Ad[3][6]*x_hat_buffer[6] + Ad[3][7]*x_hat_buffer[7] + Ad[3][8]*x_hat_buffer[8] + Bd[3][0]*throttle_and_u[1] + Bd[3][1]*throttle_and_u[2] + Bd[3][2]*throttle_and_u[3] + L[3][0]*y_diff[0] + L[3][1]*y_diff[1] + L[3][2]*y_diff[2] + L[3][3]*y_diff[3] + L[3][4]*y_diff[4] + L[3][5]*y_diff[5];
+    x_hat[4] = + Ad[4][0]*x_hat_buffer[0] + Ad[4][1]*x_hat_buffer[1] + Ad[4][2]*x_hat_buffer[2] + Ad[4][3]*x_hat_buffer[3] + Ad[4][4]*x_hat_buffer[4] + Ad[4][5]*x_hat_buffer[5] + Ad[4][6]*x_hat_buffer[6] + Ad[4][7]*x_hat_buffer[7] + Ad[4][8]*x_hat_buffer[8] + Bd[4][0]*throttle_and_u[1] + Bd[4][1]*throttle_and_u[2] + Bd[4][2]*throttle_and_u[3] + L[4][0]*y_diff[0] + L[4][1]*y_diff[1] + L[4][2]*y_diff[2] + L[4][3]*y_diff[3] + L[4][4]*y_diff[4] + L[4][5]*y_diff[5];
+    x_hat[5] = + Ad[5][0]*x_hat_buffer[0] + Ad[5][1]*x_hat_buffer[1] + Ad[5][2]*x_hat_buffer[2] + Ad[5][3]*x_hat_buffer[3] + Ad[5][4]*x_hat_buffer[4] + Ad[5][5]*x_hat_buffer[5] + Ad[5][6]*x_hat_buffer[6] + Ad[5][7]*x_hat_buffer[7] + Ad[5][8]*x_hat_buffer[8] + Bd[5][0]*throttle_and_u[1] + Bd[5][1]*throttle_and_u[2] + Bd[5][2]*throttle_and_u[3] + L[5][0]*y_diff[0] + L[5][1]*y_diff[1] + L[5][2]*y_diff[2] + L[5][3]*y_diff[3] + L[5][4]*y_diff[4] + L[5][5]*y_diff[5];
+    x_hat[6] = + Ad[6][0]*x_hat_buffer[0] + Ad[6][1]*x_hat_buffer[1] + Ad[6][2]*x_hat_buffer[2] + Ad[6][3]*x_hat_buffer[3] + Ad[6][4]*x_hat_buffer[4] + Ad[6][5]*x_hat_buffer[5] + Ad[6][6]*x_hat_buffer[6] + Ad[6][7]*x_hat_buffer[7] + Ad[6][8]*x_hat_buffer[8] + Bd[6][0]*throttle_and_u[1] + Bd[6][1]*throttle_and_u[2] + Bd[6][2]*throttle_and_u[3] + L[6][0]*y_diff[0] + L[6][1]*y_diff[1] + L[6][2]*y_diff[2] + L[6][3]*y_diff[3] + L[6][4]*y_diff[4] + L[6][5]*y_diff[5];
+    x_hat[7] = + Ad[7][0]*x_hat_buffer[0] + Ad[7][1]*x_hat_buffer[1] + Ad[7][2]*x_hat_buffer[2] + Ad[7][3]*x_hat_buffer[3] + Ad[7][4]*x_hat_buffer[4] + Ad[7][5]*x_hat_buffer[5] + Ad[7][6]*x_hat_buffer[6] + Ad[7][7]*x_hat_buffer[7] + Ad[7][8]*x_hat_buffer[8] + Bd[7][0]*throttle_and_u[1] + Bd[7][1]*throttle_and_u[2] + Bd[7][2]*throttle_and_u[3] + L[7][0]*y_diff[0] + L[7][1]*y_diff[1] + L[7][2]*y_diff[2] + L[7][3]*y_diff[3] + L[7][4]*y_diff[4] + L[7][5]*y_diff[5];
+    x_hat[8] = + Ad[8][0]*x_hat_buffer[0] + Ad[8][1]*x_hat_buffer[1] + Ad[8][2]*x_hat_buffer[2] + Ad[8][3]*x_hat_buffer[3] + Ad[8][4]*x_hat_buffer[4] + Ad[8][5]*x_hat_buffer[5] + Ad[8][6]*x_hat_buffer[6] + Ad[8][7]*x_hat_buffer[7] + Ad[8][8]*x_hat_buffer[8] + Bd[8][0]*throttle_and_u[1] + Bd[8][1]*throttle_and_u[2] + Bd[8][2]*throttle_and_u[3] + L[8][0]*y_diff[0] + L[8][1]*y_diff[1] + L[8][2]*y_diff[2] + L[8][3]*y_diff[3] + L[8][4]*y_diff[4] + L[8][5]*y_diff[5];
+    
+
     // find x and u equilibrium values
     r_short[0] = r[0];
     r_short[1] = r[1];
@@ -271,46 +312,6 @@ void Fly::observe_and_control(int fly_throttle, int &fly_front_left, int &fly_fr
     fly_front_right = 1000; // ceil(output_to_motor[1] + 1000.0f);
     fly_back_left = 1000; // ceil(output_to_motor[2] + 1000.0f);
     fly_back_right = ceil(output_to_motor[3] + 1000.0f);
-
-    // find observed y_hat
-    y_hat[0] = + Cd[0][0]*x_hat[0] + Cd[0][1]*x_hat[1] + Cd[0][2]*x_hat[2] + Cd[0][3]*x_hat[3] + Cd[0][4]*x_hat[4] + Cd[0][5]*x_hat[5] + Cd[0][6]*x_hat[6] + Cd[0][7]*x_hat[7] + Cd[0][8]*x_hat[8];
-    y_hat[1] = + Cd[1][0]*x_hat[0] + Cd[1][1]*x_hat[1] + Cd[1][2]*x_hat[2] + Cd[1][3]*x_hat[3] + Cd[1][4]*x_hat[4] + Cd[1][5]*x_hat[5] + Cd[1][6]*x_hat[6] + Cd[1][7]*x_hat[7] + Cd[1][8]*x_hat[8];
-    y_hat[2] = + Cd[2][0]*x_hat[0] + Cd[2][1]*x_hat[1] + Cd[2][2]*x_hat[2] + Cd[2][3]*x_hat[3] + Cd[2][4]*x_hat[4] + Cd[2][5]*x_hat[5] + Cd[2][6]*x_hat[6] + Cd[2][7]*x_hat[7] + Cd[2][8]*x_hat[8];
-    y_hat[3] = + Cd[3][0]*x_hat[0] + Cd[3][1]*x_hat[1] + Cd[3][2]*x_hat[2] + Cd[3][3]*x_hat[3] + Cd[3][4]*x_hat[4] + Cd[3][5]*x_hat[5] + Cd[3][6]*x_hat[6] + Cd[3][7]*x_hat[7] + Cd[3][8]*x_hat[8];
-    y_hat[4] = + Cd[4][0]*x_hat[0] + Cd[4][1]*x_hat[1] + Cd[4][2]*x_hat[2] + Cd[4][3]*x_hat[3] + Cd[4][4]*x_hat[4] + Cd[4][5]*x_hat[5] + Cd[4][6]*x_hat[6] + Cd[4][7]*x_hat[7] + Cd[4][8]*x_hat[8];
-    y_hat[5] = + Cd[5][0]*x_hat[0] + Cd[5][1]*x_hat[1] + Cd[5][2]*x_hat[2] + Cd[5][3]*x_hat[3] + Cd[5][4]*x_hat[4] + Cd[5][5]*x_hat[5] + Cd[5][6]*x_hat[6] + Cd[5][7]*x_hat[7] + Cd[5][8]*x_hat[8];
-    
-
-    // find y difference (y_hat - y)
-    q0_y_hat = solve_q0(y_hat[0], y_hat[1], y_hat[2]);
-    quaternion_difference(q0_y_hat, y_hat[0], y_hat[1], y_hat[2],
-                          q0_y, y[0], y[1], y[2],
-                          q0_y_diff, y_diff[0], y_diff[1], y_diff[2]);
-    y_diff[3] = y_hat[3] - y[3];
-    y_diff[4] = y_hat[4] - y[4];
-    y_diff[5] = y_hat[5] - y[5];
-    
-
-    // find observed x_hat
-    x_hat_buffer[0] = x_hat[0];
-    x_hat_buffer[1] = x_hat[1];
-    x_hat_buffer[2] = x_hat[2];
-    x_hat_buffer[3] = x_hat[3];
-    x_hat_buffer[4] = x_hat[4];
-    x_hat_buffer[5] = x_hat[5];
-    x_hat_buffer[6] = x_hat[6];
-    x_hat_buffer[7] = x_hat[7];
-    x_hat_buffer[8] = x_hat[8];
-    x_hat[0] = + Ad[0][0]*x_hat_buffer[0] + Ad[0][1]*x_hat_buffer[1] + Ad[0][2]*x_hat_buffer[2] + Ad[0][3]*x_hat_buffer[3] + Ad[0][4]*x_hat_buffer[4] + Ad[0][5]*x_hat_buffer[5] + Ad[0][6]*x_hat_buffer[6] + Ad[0][7]*x_hat_buffer[7] + Ad[0][8]*x_hat_buffer[8] + Bd[0][0]*throttle_and_u[1] + Bd[0][1]*throttle_and_u[2] + Bd[0][2]*throttle_and_u[3] + L[0][0]*y_diff[0] + L[0][1]*y_diff[1] + L[0][2]*y_diff[2] + L[0][3]*y_diff[3] + L[0][4]*y_diff[4] + L[0][5]*y_diff[5];
-    x_hat[1] = + Ad[1][0]*x_hat_buffer[0] + Ad[1][1]*x_hat_buffer[1] + Ad[1][2]*x_hat_buffer[2] + Ad[1][3]*x_hat_buffer[3] + Ad[1][4]*x_hat_buffer[4] + Ad[1][5]*x_hat_buffer[5] + Ad[1][6]*x_hat_buffer[6] + Ad[1][7]*x_hat_buffer[7] + Ad[1][8]*x_hat_buffer[8] + Bd[1][0]*throttle_and_u[1] + Bd[1][1]*throttle_and_u[2] + Bd[1][2]*throttle_and_u[3] + L[1][0]*y_diff[0] + L[1][1]*y_diff[1] + L[1][2]*y_diff[2] + L[1][3]*y_diff[3] + L[1][4]*y_diff[4] + L[1][5]*y_diff[5];
-    x_hat[2] = + Ad[2][0]*x_hat_buffer[0] + Ad[2][1]*x_hat_buffer[1] + Ad[2][2]*x_hat_buffer[2] + Ad[2][3]*x_hat_buffer[3] + Ad[2][4]*x_hat_buffer[4] + Ad[2][5]*x_hat_buffer[5] + Ad[2][6]*x_hat_buffer[6] + Ad[2][7]*x_hat_buffer[7] + Ad[2][8]*x_hat_buffer[8] + Bd[2][0]*throttle_and_u[1] + Bd[2][1]*throttle_and_u[2] + Bd[2][2]*throttle_and_u[3] + L[2][0]*y_diff[0] + L[2][1]*y_diff[1] + L[2][2]*y_diff[2] + L[2][3]*y_diff[3] + L[2][4]*y_diff[4] + L[2][5]*y_diff[5];
-    x_hat[3] = + Ad[3][0]*x_hat_buffer[0] + Ad[3][1]*x_hat_buffer[1] + Ad[3][2]*x_hat_buffer[2] + Ad[3][3]*x_hat_buffer[3] + Ad[3][4]*x_hat_buffer[4] + Ad[3][5]*x_hat_buffer[5] + Ad[3][6]*x_hat_buffer[6] + Ad[3][7]*x_hat_buffer[7] + Ad[3][8]*x_hat_buffer[8] + Bd[3][0]*throttle_and_u[1] + Bd[3][1]*throttle_and_u[2] + Bd[3][2]*throttle_and_u[3] + L[3][0]*y_diff[0] + L[3][1]*y_diff[1] + L[3][2]*y_diff[2] + L[3][3]*y_diff[3] + L[3][4]*y_diff[4] + L[3][5]*y_diff[5];
-    x_hat[4] = + Ad[4][0]*x_hat_buffer[0] + Ad[4][1]*x_hat_buffer[1] + Ad[4][2]*x_hat_buffer[2] + Ad[4][3]*x_hat_buffer[3] + Ad[4][4]*x_hat_buffer[4] + Ad[4][5]*x_hat_buffer[5] + Ad[4][6]*x_hat_buffer[6] + Ad[4][7]*x_hat_buffer[7] + Ad[4][8]*x_hat_buffer[8] + Bd[4][0]*throttle_and_u[1] + Bd[4][1]*throttle_and_u[2] + Bd[4][2]*throttle_and_u[3] + L[4][0]*y_diff[0] + L[4][1]*y_diff[1] + L[4][2]*y_diff[2] + L[4][3]*y_diff[3] + L[4][4]*y_diff[4] + L[4][5]*y_diff[5];
-    x_hat[5] = + Ad[5][0]*x_hat_buffer[0] + Ad[5][1]*x_hat_buffer[1] + Ad[5][2]*x_hat_buffer[2] + Ad[5][3]*x_hat_buffer[3] + Ad[5][4]*x_hat_buffer[4] + Ad[5][5]*x_hat_buffer[5] + Ad[5][6]*x_hat_buffer[6] + Ad[5][7]*x_hat_buffer[7] + Ad[5][8]*x_hat_buffer[8] + Bd[5][0]*throttle_and_u[1] + Bd[5][1]*throttle_and_u[2] + Bd[5][2]*throttle_and_u[3] + L[5][0]*y_diff[0] + L[5][1]*y_diff[1] + L[5][2]*y_diff[2] + L[5][3]*y_diff[3] + L[5][4]*y_diff[4] + L[5][5]*y_diff[5];
-    x_hat[6] = + Ad[6][0]*x_hat_buffer[0] + Ad[6][1]*x_hat_buffer[1] + Ad[6][2]*x_hat_buffer[2] + Ad[6][3]*x_hat_buffer[3] + Ad[6][4]*x_hat_buffer[4] + Ad[6][5]*x_hat_buffer[5] + Ad[6][6]*x_hat_buffer[6] + Ad[6][7]*x_hat_buffer[7] + Ad[6][8]*x_hat_buffer[8] + Bd[6][0]*throttle_and_u[1] + Bd[6][1]*throttle_and_u[2] + Bd[6][2]*throttle_and_u[3] + L[6][0]*y_diff[0] + L[6][1]*y_diff[1] + L[6][2]*y_diff[2] + L[6][3]*y_diff[3] + L[6][4]*y_diff[4] + L[6][5]*y_diff[5];
-    x_hat[7] = + Ad[7][0]*x_hat_buffer[0] + Ad[7][1]*x_hat_buffer[1] + Ad[7][2]*x_hat_buffer[2] + Ad[7][3]*x_hat_buffer[3] + Ad[7][4]*x_hat_buffer[4] + Ad[7][5]*x_hat_buffer[5] + Ad[7][6]*x_hat_buffer[6] + Ad[7][7]*x_hat_buffer[7] + Ad[7][8]*x_hat_buffer[8] + Bd[7][0]*throttle_and_u[1] + Bd[7][1]*throttle_and_u[2] + Bd[7][2]*throttle_and_u[3] + L[7][0]*y_diff[0] + L[7][1]*y_diff[1] + L[7][2]*y_diff[2] + L[7][3]*y_diff[3] + L[7][4]*y_diff[4] + L[7][5]*y_diff[5];
-    x_hat[8] = + Ad[8][0]*x_hat_buffer[0] + Ad[8][1]*x_hat_buffer[1] + Ad[8][2]*x_hat_buffer[2] + Ad[8][3]*x_hat_buffer[3] + Ad[8][4]*x_hat_buffer[4] + Ad[8][5]*x_hat_buffer[5] + Ad[8][6]*x_hat_buffer[6] + Ad[8][7]*x_hat_buffer[7] + Ad[8][8]*x_hat_buffer[8] + Bd[8][0]*throttle_and_u[1] + Bd[8][1]*throttle_and_u[2] + Bd[8][2]*throttle_and_u[3] + L[8][0]*y_diff[0] + L[8][1]*y_diff[1] + L[8][2]*y_diff[2] + L[8][3]*y_diff[3] + L[8][4]*y_diff[4] + L[8][5]*y_diff[5];
-    
 
     // if control action result is nan, reset x_hat and y_hat
     if(isnan(throttle_and_u[1]) || isnan(throttle_and_u[2]) || isnan(throttle_and_u[3])) {
