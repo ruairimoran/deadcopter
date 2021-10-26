@@ -1,7 +1,7 @@
 import src
 
 # flight_controller intialisation
-copter = src.copter.copter.DeadCopter(disturbance_level=1e-1,
+copter = src.flight_controller.copter.DeadCopter(disturbance_level=1e-1,
                                       mass=1.8,
                                       arm_length=0.225,
                                       K_v=1000,
@@ -10,7 +10,7 @@ copter = src.copter.copter.DeadCopter(disturbance_level=1e-1,
                                       prop_diameter_in=8)
 
 # simulator intialisation
-sim = src.copter.simulator.Simulator(t_simulation=1,
+sim = src.flight_controller.simulator.Simulator(t_simulation=1,
                                      t_sampling=1/125,
                                      measurement_noise_multiplier=1e-4)
 

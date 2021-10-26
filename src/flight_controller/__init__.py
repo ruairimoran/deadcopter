@@ -1,2 +1,2 @@
-import dead.copter.copter
-import dead.copter.simulator
+import src.flight_controller.copter
+import src.flight_controller.simulator

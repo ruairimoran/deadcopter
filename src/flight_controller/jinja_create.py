@@ -1,5 +1,5 @@
 import jinja2
-import dead
+import src
 import datetime
 import numpy as np
 
@@ -10,7 +10,7 @@ timestamp = datetime.datetime.utcnow()
 # run simulator to get constant matrices
 
 # flight_controller intialisation
-copter = dead.copter.copter.DeadCopter(mass=1.4,  # mass of entire copter in kg
+copter = src.flight_controller.copter.DeadCopter(mass=1.4,  # mass of entire copter in kg
                                        arm_length=0.225,  # half the distance between two opposite motors in m
                                        K_v=1000,  # Kv rating of the motors
                                        voltage_max=16.8,  # max voltage of battery in V
@@ -19,7 +19,7 @@ copter = dead.copter.copter.DeadCopter(mass=1.4,  # mass of entire copter in kg
 
 # simulator intialisation
 sampling_frequency = 125  # in Hz - sets refresh rate of ESCs
-sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=1/sampling_frequency)  # do not change
+sim = src.flight_controller.simulator.Simulator(t_simulation=3, t_sampling=1/sampling_frequency)  # do not change
 
 # system design
 Ad, Bd, Cd, K, L, wide_G = sim.system_design(copter)  # wide_G has 6 columns
