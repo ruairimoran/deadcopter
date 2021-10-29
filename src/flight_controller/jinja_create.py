@@ -1,7 +1,8 @@
 import jinja2
-import dead
 import datetime
 import numpy as np
+import deadcopter.src.flight_controller as fc
+
 
 # get current date and time
 timestamp = datetime.datetime.utcnow()
@@ -9,17 +10,17 @@ timestamp = datetime.datetime.utcnow()
 # ----------------------------------------------------------------------------------------------------------------------#
 # run simulator to get constant matrices
 
-# copter intialisation
-copter = dead.copter.copter.DeadCopter(mass=1.4,  # mass of entire copter in kg
-                                       arm_length=0.225,  # half the distance between two opposite motors in m
-                                       K_v=1000,  # Kv rating of the motors
-                                       voltage_max=16.8,  # max voltage of battery in V
-                                       voltage_min=1.68,  # min voltage of battery in V
-                                       prop_diameter_in=8)  # propeller diameter in inches
+# flight_controller initialisation
+copter = fc.copter.DeadCopter(mass=1.4,  # mass of entire copter in kg
+                              arm_length=0.225,  # half the distance between two opposite motors in m
+                              K_v=1000,  # Kv rating of the motors
+                              voltage_max=16.8,  # max voltage of battery in V
+                              voltage_min=1.68,  # min voltage of battery in V
+                              prop_diameter_in=8)  # propeller diameter in inches
 
-# simulator intialisation
+# simulator initialisation
 sampling_frequency = 125  # in Hz - sets refresh rate of ESCs
-sim = dead.copter.simulator.Simulator(t_simulation=3, t_sampling=1/sampling_frequency)  # do not change
+sim = fc.simulator.Simulator(t_simulation=3, t_sampling=1/sampling_frequency)  # do not change
 
 # system design
 Ad, Bd, Cd, K, L, wide_G = sim.system_design(copter)  # wide_G has 6 columns
@@ -75,7 +76,7 @@ _G = reformat_matrix_to_array(G)
 # ----------------------------------------------------------------------------------------------------------------------#
 # setup jinja environment
 
-file_loader = jinja2.FileSystemLoader('../templates')
+file_loader = jinja2.FileSystemLoader('../jinja_templates')
 env = jinja2.Environment(loader=file_loader, autoescape=True)
 
 # ----------------------------------------------------------------------------------------------------------------------#

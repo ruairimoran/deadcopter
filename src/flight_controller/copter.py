@@ -1,7 +1,7 @@
 from pyquaternion import *
 import numpy as np
 from scipy.integrate import solve_ivp
-import control as C
+import control as ctrl
 
 
 class DeadCopter:
@@ -94,25 +94,25 @@ class DeadCopter:
         return self.__n_h
 
     def controllability(self, a, b, n):
-        ctrb_rank = np.linalg.matrix_rank(C.ctrb(a, b))
+        ctrb_rank = np.linalg.matrix_rank(ctrl.ctrb(a, b))
         if ctrb_rank < n:
             raise Exception(f"System not controllable. Ctrb Matrix Rank ({ctrb_rank}) < States ({n})")
 
     def observability(self, a, c, n):
-        obsv_rank = np.linalg.matrix_rank(C.obsv(a, c))
+        obsv_rank = np.linalg.matrix_rank(ctrl.obsv(a, c))
         if obsv_rank < n:
             raise Exception(f"System not observable. Obsv Matrix Rank ({obsv_rank}) < Measured States ({n})")
 
     def LQR(self, a, b):  # 125 Hz
         Q_lqr = np.diagflat([2000, 2000, 10, 2, 2, 10, 0, 0, 0])  # np.diagflat([100, 100, 10, 2, 2, 10, 0, 0, 0])  # a.shape[0]
         R_lqr = np.diagflat([1, 1, 10])  # np.diagflat([1, 1, 10])  # b.shape[1]
-        solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = C.dare(a, b, Q_lqr, R_lqr)
+        solution_P_lqr, eigenvalues_cl_lqr, negative_gain_K_lqr = ctrl.dare(a, b, Q_lqr, R_lqr)
         return -negative_gain_K_lqr
 
     def Kf(self, a, c):
         Q_Kf = np.diagflat([1, 1, 1, 1, 1, 1, 500, 500, 500])  # np.diagflat([1, 1, 1, 1, 1, 1, 500, 500, 500])  # a.shape[0]
         R_Kf = 2 * np.diagflat([1, 1, 1, 1, 1, 1])  # 2 * np.diagflat([1, 1, 1, 1, 1, 1])  # c.shape[0]
-        solution_P_Kf, eigenvalues_cl_Kf, negative_gain_L_Kf = C.dare(a.T, c.T, Q_Kf, R_Kf)
+        solution_P_Kf, eigenvalues_cl_Kf, negative_gain_L_Kf = ctrl.dare(a.T, c.T, Q_Kf, R_Kf)
         return -negative_gain_L_Kf.T
 
     def normalise_quaternion(self, non_norm_quaternion):
@@ -155,8 +155,8 @@ class DeadCopter:
 
     def discretisation(self, dt):
         a, b, c = self.linearisation()  # return linearised dynamics matrices
-        continuous_system = C.ss(a, b, c, 0)
-        discrete_system = C.c2d(continuous_system, dt)
+        continuous_system = ctrl.ss(a, b, c, 0)
+        discrete_system = ctrl.c2d(continuous_system, dt)
         Ad = discrete_system.A
         Bd = discrete_system.B
         Cd = discrete_system.C
