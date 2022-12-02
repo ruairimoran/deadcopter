@@ -1,4 +1,6 @@
-#include "MPU9250.h"
+#include <mpu9250.h>
+
+//#include "MPU9250.h"
 #include "MadgwickAHRS.h"
 #include <math.h>
 
