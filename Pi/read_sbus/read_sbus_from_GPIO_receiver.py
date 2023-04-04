@@ -3,7 +3,7 @@ import time
 import serial
 
 SBUS_PIN = 4 #pin where sbus wire is plugged in
-ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=1)
 ser.reset_input_buffer()
 
 reader = read_sbus_from_GPIO.SbusReader(SBUS_PIN)
