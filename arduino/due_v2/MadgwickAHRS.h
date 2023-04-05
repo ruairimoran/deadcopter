@@ -29,16 +29,17 @@ private:
     float q2;
     float q3;	// quaternion of sensor frame relative to auxiliary frame
     float invSampleFreq;
-    float roll;
-    float pitch;
-    float yaw;
+    
     char anglesComputed;
-    void computeAngles();
 
 //-------------------------------------------------------------------------------------------
 // Function declarations
 public:
     Madgwick(void);
+    void computeAngles();
+    float roll; 
+    float pitch;
+    float yaw;
     void begin(float sampleFrequency) { invSampleFreq = 1.0f / sampleFrequency; }
     void set_beta(float beta_input) { beta = beta_input; }
     void update(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float &_q0, float &_q1, float &_q2, float &_q3);
