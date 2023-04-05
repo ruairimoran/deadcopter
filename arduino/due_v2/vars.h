@@ -15,6 +15,13 @@ unsigned long dt = 0;
 
 
 //IMU vars :: states => [quaternions, gyro_event, **motors_rps**]
+/* delta-acceleration for calibration (m/s^2) */
+double a_calib[3];
+
+/* delta-w for calibration (rad/s) */
+double w_calib[3];
+
+#define GRAVITATIONAL_ACCELERATION 9.81
 int imu_status;
 sensors_event_t gyro_event, acc_event, magneto, temperature;
 sensors_vec_t orientation;

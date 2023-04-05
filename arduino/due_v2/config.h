@@ -15,6 +15,7 @@
 *****************************************************************************************/
 #define IMU_ADDRESS 0x68
 #define SAMPLING_FREQUENCY 125  // rate for reading imu
+#define SAMPLING_TIME_MS 1000.0/SAMPLING_FREQUENCY
 
 #define DEGREES  // get results in degrees
 //#define RADIANS
