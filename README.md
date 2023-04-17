@@ -24,7 +24,7 @@ read_sbus makes use of two libraries.
 
 ```
 sudo apt-get update
-sudo apt-get install pigpio python-pigpio python3-pigpio. That can be installed as follows 
+sudo apt-get install pigpio python-pigpio python3-pigpio 
 ```
 
 - the [bitarray](https://pypi.org/project/bitarray/) library. That can be installed as follows 
